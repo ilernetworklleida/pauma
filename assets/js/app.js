@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.3';
+  const VERSION = 'v0.4';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -144,7 +144,12 @@
     historyList: $('#historyList'),
     histEmpty: $('#histEmpty'),
     histSearch: $('#histSearch'),
+    searchClear: $('#searchClear'),
     btnHistClear: $('#btnHistClear'),
+
+    installBanner: $('#installBanner'),
+    installAccept: $('#installAccept'),
+    installDismiss: $('#installDismiss'),
 
     speakersList: $('#speakersList'),
     setEmotion: $('#setEmotion'),
@@ -461,7 +466,7 @@
     if (!state.sosActive) { hideWelcome(); activateView('listen'); }
     state.currentSession = newSession();
     await requestWakeLock();
-    vibrate(40);
+    vibrate([30, 20, 30]);
 
     const cfg = await getProviderConfig();
     if (cfg?.provider === 'deepgram' && cfg.token) {
@@ -1241,6 +1246,14 @@
     // history
     el.histSearch.addEventListener('input', (e) => {
       state.historySearch = e.target.value;
+      el.searchClear.hidden = !e.target.value;
+      renderHistory();
+    });
+    el.searchClear.addEventListener('click', () => {
+      el.histSearch.value = '';
+      state.historySearch = '';
+      el.searchClear.hidden = true;
+      el.histSearch.focus();
       renderHistory();
     });
     el.btnHistClear.addEventListener('click', async () => {
@@ -1274,7 +1287,52 @@
     el.obSkip.addEventListener('click', finishOnboarding);
 
     setupServiceWorker();
+    setupInstallPrompt();
     setStatus('Listo · pulsa el micrófono para empezar');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // PWA INSTALL PROMPT
+  // ════════════════════════════════════════════════════════════════
+  let deferredInstallPrompt = null;
+  function setupInstallPrompt() {
+    if (!el.installBanner) return;
+
+    // ya está instalada
+    if (window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true) {
+      return;
+    }
+    if (localStorage.getItem('pauma-install-dismissed') === '1') return;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      // espera 8s para no agobiar nada más entrar
+      setTimeout(() => {
+        if (deferredInstallPrompt) el.installBanner.hidden = false;
+      }, 8000);
+    });
+
+    el.installAccept.addEventListener('click', async () => {
+      el.installBanner.hidden = true;
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice.outcome === 'accepted') vibrate(40);
+      deferredInstallPrompt = null;
+    });
+    el.installDismiss.addEventListener('click', () => {
+      el.installBanner.hidden = true;
+      localStorage.setItem('pauma-install-dismissed', '1');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      el.installBanner.hidden = true;
+      deferredInstallPrompt = null;
+      setStatus('Pauma instalada · listo', 'ok');
+      vibrate([40, 40, 80]);
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

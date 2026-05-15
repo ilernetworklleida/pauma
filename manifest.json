@@ -44,21 +44,26 @@
       "name": "Empezar a transcribir",
       "short_name": "Transcribir",
       "url": "/app/?start=listen",
-      "description": "Abre Pauma listo para escuchar"
+      "description": "Abre Pauma listo para escuchar",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Yo hablo",
       "short_name": "Yo hablo",
       "url": "/app/?view=speak",
-      "description": "Modo texto a voz"
+      "description": "Modo texto a voz",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "SOS",
       "short_name": "SOS",
       "url": "/app/?view=sos",
-      "description": "Modo emergencia para comunicar con desconocidos"
+      "description": "Modo emergencia para comunicar con desconocidos",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
+  "prefer_related_applications": false,
+  "edge_side_panel": { "preferred_width": 480 },
   "share_target": {
     "action": "/app/",
     "method": "POST",

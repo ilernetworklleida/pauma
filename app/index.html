@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Pauma · Transcripción en vivo</title>
-  <meta name="description" content="Pauma. Transcripción en vivo con identificación de hablantes y tono emocional, para personas sordas.">
+  <meta name="description" content="Transcripción en vivo con identificación de hablantes y tono emocional, para personas sordas.">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="noindex, follow">
   <meta name="format-detection" content="telephone=no">
@@ -19,21 +19,38 @@
 </head>
 <body class="app">
 
-  <!-- ───────── UPDATE TOAST (cuando hay nueva versión) ───────── -->
+  <!-- ───────── UPDATE TOAST ───────── -->
   <div class="toast" id="updateToast" hidden role="status">
     <span>Hay una versión nueva de Pauma.</span>
     <button class="btn-text-sm" id="btnUpdate" type="button">Actualizar</button>
+  </div>
+
+  <!-- ───────── INSTALL BANNER ───────── -->
+  <div class="install-banner" id="installBanner" hidden role="dialog" aria-label="Instalar app">
+    <div class="install-banner-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    </div>
+    <div class="install-banner-text">
+      <strong>Añade Pauma a tu pantalla</strong>
+      <span>Para tenerla a un toque, como una app.</span>
+    </div>
+    <button class="btn-text-sm" id="installAccept" type="button">Instalar</button>
+    <button class="install-banner-close" id="installDismiss" type="button" aria-label="Cerrar">×</button>
   </div>
 
   <!-- ───────── ONBOARDING ───────── -->
   <div class="onboarding" id="onboarding" hidden>
     <div class="ob-slide" data-slide="0">
       <div class="ob-art" aria-hidden="true">
-        <svg viewBox="0 0 120 120" width="120" height="120">
-          <circle cx="60" cy="60" r="58" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.3"/>
-          <circle cx="60" cy="60" r="44" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.5"/>
-          <circle cx="60" cy="60" r="30" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.7"/>
-          <circle cx="60" cy="60" r="16" fill="#a78bfa"/>
+        <svg viewBox="0 0 100 100" width="84" height="84" fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="38" y="14" width="24" height="42" rx="12"/>
+          <path d="M28 46v2a22 22 0 0 0 44 0v-2"/>
+          <line x1="50" y1="70" x2="50" y2="84"/>
+          <line x1="36" y1="84" x2="64" y2="84"/>
         </svg>
       </div>
       <h2>Bienvenida a Pauma</h2>
@@ -41,34 +58,34 @@
     </div>
     <div class="ob-slide" data-slide="1" hidden>
       <div class="ob-art" aria-hidden="true">
-        <svg viewBox="0 0 120 120" width="120" height="120">
-          <circle cx="36" cy="50" r="14" fill="#a78bfa"/>
-          <circle cx="84" cy="50" r="14" fill="#fbbf24"/>
-          <circle cx="60" cy="86" r="14" fill="#34d399"/>
+        <svg viewBox="0 0 100 100" width="84" height="84">
+          <circle cx="30" cy="44" r="12" fill="#a78bfa"/>
+          <circle cx="70" cy="44" r="12" fill="#fbbf24"/>
+          <circle cx="50" cy="72" r="12" fill="#34d399"/>
         </svg>
       </div>
       <h2>Identifica quién habla</h2>
-      <p>Cada persona aparece con su propio color. Puedes ponerles nombre tocando la etiqueta.</p>
+      <p>Cada persona aparece con su color. Toca la etiqueta y ponle su nombre. Pauma lo recordará.</p>
     </div>
     <div class="ob-slide" data-slide="2" hidden>
       <div class="ob-art" aria-hidden="true">
-        <svg viewBox="0 0 120 120" width="120" height="120" fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round">
-          <path d="M30 40 L30 80"/><path d="M45 30 L45 90"/>
-          <path d="M60 20 L60 100"/><path d="M75 30 L75 90"/><path d="M90 40 L90 80"/>
+        <svg viewBox="0 0 100 100" width="84" height="84" fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round">
+          <path d="M22 36v28"/><path d="M36 26v48"/>
+          <path d="M50 14v72"/><path d="M64 26v48"/><path d="M78 36v28"/>
         </svg>
       </div>
       <h2>Habla tú también</h2>
-      <p>Si prefieres no oralizar, escribe en el modo «Yo hablo» y Pauma lo dirá con una voz natural.</p>
+      <p>Si prefieres no oralizar, escribe en «Yo hablo» y Pauma lo dirá con una voz natural.</p>
     </div>
     <div class="ob-slide" data-slide="3" hidden>
-      <div class="ob-art" aria-hidden="true">
-        <svg viewBox="0 0 120 120" width="120" height="120">
-          <circle cx="60" cy="60" r="48" fill="#f87171"/>
-          <text x="60" y="74" text-anchor="middle" font-size="36" font-weight="700" fill="#0a0a0a">SOS</text>
+      <div class="ob-art" aria-hidden="true" style="background:rgba(239,68,68,.15)">
+        <svg viewBox="0 0 100 100" width="84" height="84">
+          <circle cx="50" cy="50" r="36" fill="#ef4444"/>
+          <text x="50" y="60" text-anchor="middle" font-size="22" font-weight="700" fill="#0a0a0a" font-family="-apple-system, sans-serif">SOS</text>
         </svg>
       </div>
       <h2>Botón SOS</h2>
-      <p>Para situaciones imprevistas con desconocidos (médico, taxi, urgencias) tienes el botón rojo arriba a la derecha. Activa una pantalla pensada para comunicarte rápido.</p>
+      <p>Para urgencias o desconocidos (médico, taxi, dependiente) tienes el botón rojo arriba. Activa una pantalla para comunicarte al instante.</p>
     </div>
     <nav class="ob-nav">
       <div class="ob-dots" id="obDots">
@@ -77,14 +94,14 @@
         <span class="ob-dot"></span>
         <span class="ob-dot"></span>
       </div>
-      <button class="btn btn-primary" id="obNext" type="button">Siguiente</button>
+      <button class="btn btn-primary btn-large" id="obNext" type="button">Siguiente</button>
       <button class="btn-text-sm" id="obSkip" type="button">Saltar</button>
     </nav>
   </div>
 
   <!-- ───────── HEADER ───────── -->
   <header class="app-header">
-    <a href="/" class="brand" aria-label="Pauma">
+    <a href="/" class="brand" aria-label="Pauma, inicio">
       <span class="brand-dot" id="brand-dot" aria-hidden="true"></span>
       Pauma
     </a>
@@ -92,9 +109,7 @@
       <button class="icon-btn" id="btnLang" aria-label="Cambiar idioma" title="Idioma">
         <span id="langLabel">ES</span>
       </button>
-      <button class="sos-btn" id="btnSos" aria-label="Modo SOS" title="Modo SOS - urgencias">
-        SOS
-      </button>
+      <button class="sos-btn" id="btnSos" aria-label="Activar modo SOS" title="Modo SOS · urgencias">SOS</button>
     </div>
   </header>
 
@@ -104,6 +119,14 @@
   <main class="view view-listen" id="viewListen" data-view="listen">
     <div id="transcript" aria-live="polite" aria-label="Transcripción en vivo">
       <div class="welcome" id="welcome">
+        <div class="welcome-mic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
+        </div>
         <p class="welcome-title">Toca el micrófono para empezar</p>
         <p class="welcome-sub">Pauma escuchará y mostrará aquí lo que se diga cerca, con un color por persona.</p>
         <p class="welcome-hint">La pantalla no se apagará mientras esté activa.</p>
@@ -127,15 +150,13 @@
         <button class="btn-text" id="btnSpeakClear" type="button">Borrar</button>
       </div>
 
-      <div class="quick-phrases">
-        <h3>Frases rápidas</h3>
-        <div class="categories" id="categories" role="tablist"></div>
-        <div class="quick-list" id="quickList"></div>
-        <button class="btn-text-sm" id="btnAddPhrase" type="button">+ Añadir frase a esta categoría</button>
-      </div>
+      <h3 class="section-title">Frases rápidas</h3>
+      <div class="categories" id="categories" role="tablist"></div>
+      <div class="quick-list" id="quickList"></div>
+      <button class="btn-text-sm" id="btnAddPhrase" type="button">+ Añadir frase a esta categoría</button>
 
       <div class="recent-spoken" id="recentSpokenWrap" hidden>
-        <h3>Lo que has dicho hace poco</h3>
+        <h3 class="section-title">Lo que has dicho hace poco</h3>
         <div class="quick-list" id="recentSpoken"></div>
       </div>
     </div>
@@ -149,13 +170,20 @@
         <button class="btn-text-sm" id="btnHistClear" type="button">Borrar todo</button>
       </div>
       <div class="search-bar">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path>
         </svg>
-        <input type="search" id="histSearch" placeholder="Buscar en el historial..." aria-label="Buscar">
+        <input type="search" id="histSearch" placeholder="Buscar en el historial..." aria-label="Buscar en el historial">
+        <button class="search-clear" id="searchClear" type="button" hidden aria-label="Borrar búsqueda">×</button>
       </div>
       <div id="historyList" class="hist-list"></div>
       <div class="hist-empty" id="histEmpty" hidden>
+        <div class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path>
+          </svg>
+        </div>
         <p>Todavía no hay conversaciones guardadas.</p>
         <p class="muted">Cuando empieces a transcribir, las sesiones se guardarán automáticamente en este dispositivo.</p>
       </div>
@@ -168,7 +196,12 @@
       <h2 class="view-title">Ajustes</h2>
 
       <section class="setting-group">
-        <h3>Idioma</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <h3>Idioma</h3>
+        </div>
         <div class="radio-row">
           <label><input type="radio" name="lang" value="es-ES"> Español</label>
           <label><input type="radio" name="lang" value="ca-ES"> Català</label>
@@ -177,7 +210,12 @@
       </section>
 
       <section class="setting-group">
-        <h3>Tamaño del texto</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          </span>
+          <h3>Tamaño del texto</h3>
+        </div>
         <div class="radio-row">
           <label><input type="radio" name="fontsize" value="normal"> Normal</label>
           <label><input type="radio" name="fontsize" value="large"> Grande</label>
@@ -186,68 +224,100 @@
       </section>
 
       <section class="setting-group">
-        <h3>Mostrar tono emocional</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </span>
+          <h3>Mostrar tono emocional</h3>
+        </div>
         <label class="toggle">
           <input type="checkbox" id="setEmotion" checked>
-          <span>Etiquetar frases con (alegre), (irritado), etc.</span>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Etiquetar frases con (alegre), (irritado)...</span>
         </label>
       </section>
 
       <section class="setting-group">
-        <h3>Pulsar para hablar</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </span>
+          <h3>Pulsar para hablar</h3>
+        </div>
         <label class="toggle">
           <input type="checkbox" id="setPTT">
-          <span>Mantén pulsado el micrófono para escuchar; suelta para parar.</span>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Mantén pulsado el micrófono para escuchar.</span>
         </label>
-        <p class="setting-hint">Útil en conversaciones cortas. Sin esto, el micrófono se queda escuchando hasta que lo apagas.</p>
+        <p class="setting-hint">Útil para conversaciones cortas. Sin esto, escucha hasta que lo apagas.</p>
       </section>
 
       <section class="setting-group">
-        <h3>Guardar historial</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          </span>
+          <h3>Guardar historial</h3>
+        </div>
         <label class="toggle">
           <input type="checkbox" id="setHistory" checked>
-          <span>Guardar las conversaciones en este dispositivo</span>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Guardar conversaciones en este dispositivo.</span>
         </label>
-        <p class="setting-hint">Las conversaciones nunca salen de tu navegador. Puedes borrarlas cuando quieras.</p>
+        <p class="setting-hint">Las conversaciones nunca salen de tu navegador. Bórralas cuando quieras.</p>
       </section>
 
       <section class="setting-group">
-        <h3>Personas</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <h3>Personas</h3>
+        </div>
         <div id="speakersList" class="speakers-list"></div>
-        <p class="setting-hint">Renombra a quien quieras y Pauma lo recordará en las próximas sesiones.</p>
+        <p class="setting-hint">Renómbralas y Pauma las recordará en próximas sesiones.</p>
       </section>
 
       <section class="setting-group">
-        <h3>Estadísticas</h3>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></svg>
+          </span>
+          <h3>Estadísticas</h3>
+        </div>
         <div class="stats-grid" id="statsGrid"></div>
+        <p class="setting-hint">Solo de este dispositivo. No se envía a nadie.</p>
       </section>
 
       <section class="setting-group">
-        <h3>Sobre</h3>
-        <p class="muted">Pauma · v0.3 · <a href="/">Inicio</a> · <a href="/privacidad.html">Privacidad</a></p>
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </span>
+          <h3>Sobre Pauma</h3>
+        </div>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.4 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a></p>
       </section>
     </div>
   </main>
 
-  <!-- SOS (vista pantalla completa) -->
+  <!-- SOS -->
   <main class="view view-sos" id="viewSos" data-view="sos" hidden>
     <div class="sos-wrap">
       <div class="sos-header">
-        <h2>Soy sorda. Comuniquémonos aquí.</h2>
+        <h2>Soy sorda.<br>Comuniquémonos aquí.</h2>
         <button class="btn-text" id="btnSosClose" type="button" aria-label="Cerrar modo SOS">Cerrar</button>
       </div>
-
       <div class="sos-split">
         <section class="sos-them" aria-label="Lo que dice la otra persona">
-          <div class="sos-section-title">Lo que dices:</div>
+          <div class="sos-section-title">Tú dices:</div>
           <div class="sos-text" id="sosTranscript">
             <span class="muted">Habla cerca del móvil. Pauma transcribirá automáticamente.</span>
           </div>
         </section>
-
         <section class="sos-me" aria-label="Lo que quiero decir">
-          <div class="sos-section-title">Lo que te digo:</div>
-          <textarea id="sosInput" placeholder="Escribe aquí..." rows="3" maxlength="500"></textarea>
+          <div class="sos-section-title">Yo respondo:</div>
+          <textarea id="sosInput" placeholder="Escribe aquí lo que quieres decir..." rows="3" maxlength="500"></textarea>
           <div class="sos-actions">
             <button class="btn btn-primary btn-large" id="sosSpeak" type="button">Leer en voz alta</button>
           </div>
@@ -274,13 +344,13 @@
     </button>
 
     <button class="tab tab-mic" data-target="listen" id="tabMic" type="button" aria-label="Empezar a escuchar">
-      <svg class="icon-mic" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg class="icon-mic" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="9" y="2" width="6" height="12" rx="3"></rect>
         <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
         <line x1="12" y1="19" x2="12" y2="22"></line>
         <line x1="8" y1="22" x2="16" y2="22"></line>
       </svg>
-      <svg class="icon-stop" viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true">
+      <svg class="icon-stop" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
         <rect x="6" y="6" width="12" height="12" rx="2"></rect>
       </svg>
     </button>
@@ -306,9 +376,7 @@
   <!-- STATUS LINE -->
   <div class="status-line" id="statusLine" aria-live="polite"></div>
 
-  <!-- ═══════════ MODALS ═══════════ -->
-
-  <!-- Renombrar hablante -->
+  <!-- MODALS -->
   <div class="modal" id="modalRename" hidden>
     <div class="modal-card">
       <h3>¿Cómo se llama esta persona?</h3>
@@ -320,7 +388,6 @@
     </div>
   </div>
 
-  <!-- Detalle sesión historial (sheet) -->
   <div class="sheet" id="sheetSession" hidden>
     <div class="sheet-card">
       <header class="sheet-head">
