@@ -104,14 +104,48 @@
     <a href="/" class="brand" aria-label="Pauma, inicio">
       <span class="brand-dot" id="brand-dot" aria-hidden="true"></span>
       Pauma
+      <span class="quality-dot" id="qualityDot" aria-label="Calidad de transcripción" title=""></span>
     </a>
     <div class="app-controls">
+      <button class="f2f-toggle" id="btnF2F" aria-label="Modo cara a cara" title="Modo cara a cara (texto rotado para la otra persona)">F2F</button>
       <button class="icon-btn" id="btnLang" aria-label="Cambiar idioma" title="Idioma">
         <span id="langLabel">ES</span>
       </button>
       <button class="sos-btn" id="btnSos" aria-label="Activar modo SOS" title="Modo SOS · urgencias">SOS</button>
     </div>
   </header>
+
+  <!-- audio visualizer (barras de volumen) -->
+  <div class="audio-viz" id="audioViz" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <!-- quick actions flotantes cuando escucha -->
+  <div class="quick-actions" id="quickActions" hidden role="toolbar" aria-label="Acciones rápidas">
+    <button class="quick-action" id="qaMark" type="button" aria-label="Marcar este momento" title="Marcar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+    </button>
+    <button class="quick-action" id="qaRepeat" type="button" aria-label="Pedir que repita" title="¿Puedes repetir?">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"></polyline>
+        <polyline points="23 20 23 14 17 14"></polyline>
+        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+      </svg>
+    </button>
+    <button class="quick-action" id="qaSlower" type="button" aria-label="Pedir que vaya más despacio" title="Más despacio, por favor">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- tip pulsante sobre el FAB (primera visita) -->
+  <div class="tip-mic" id="tipMic" hidden aria-hidden="true">Toca para empezar</div>
 
   <!-- ═══════════ VIEWS ═══════════ -->
 
@@ -296,7 +330,8 @@
           </span>
           <h3>Sobre Pauma</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.4 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.5 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a></p>
+        <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
   </main>

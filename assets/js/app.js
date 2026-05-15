@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.4';
+  const VERSION = 'v0.5';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -78,10 +78,13 @@
     micStream: null,
     audioProcessor: null,
     audioSource: null,
+    audioAnalyser: null,
+    audioVizRaf: null,
     webSpeech: null,
     wakeLock: null,
     keepAliveTimer: null,
     currentKeyId: null,
+    faceToFace: localStorage.getItem('pauma-f2f') === '1',
 
     speakers: loadJSON('pauma-speakers', {}),
     currentSession: null,
@@ -151,6 +154,16 @@
     installAccept: $('#installAccept'),
     installDismiss: $('#installDismiss'),
 
+    audioViz: $('#audioViz'),
+    qualityDot: $('#qualityDot'),
+    quickActions: $('#quickActions'),
+    qaMark: $('#qaMark'),
+    qaRepeat: $('#qaRepeat'),
+    qaSlower: $('#qaSlower'),
+    tipMic: $('#tipMic'),
+    btnF2F: $('#btnF2F'),
+    appHeader: document.querySelector('.app-header'),
+
     speakersList: $('#speakersList'),
     setEmotion: $('#setEmotion'),
     setHistory: $('#setHistory'),
@@ -219,6 +232,19 @@
     if ('vibrate' in navigator) {
       try { navigator.vibrate(pattern); } catch (_) {}
     }
+  }
+
+  function feedbackToast(text, kind = '') {
+    const t = document.createElement('div');
+    t.className = 'feedback-toast' + (kind ? ' ' + kind : '');
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1900);
+  }
+
+  function setQuality(level, title) {
+    el.qualityDot.className = 'quality-dot ' + (level || '');
+    if (title) el.qualityDot.title = title;
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -380,6 +406,13 @@
           source.connect(processor);
           processor.connect(ctx.destination);
 
+          // visualizer
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 64;
+          source.connect(analyser);
+          state.audioAnalyser = analyser;
+          startAudioViz();
+
           state.keepAliveTimer = setInterval(() => {
             if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'KeepAlive' }));
           }, 8000);
@@ -474,6 +507,8 @@
         state.provider = 'deepgram';
         await startDeepgram(cfg);
         setStatus('Escuchando · alta calidad · identifica hablantes', 'ok');
+        setQuality('high', 'Alta calidad · diarización activa');
+        showQuickActions();
         return;
       } catch (err) { console.warn('Deepgram failed, fallback', err); }
     }
@@ -482,10 +517,13 @@
         state.provider = 'webspeech';
         startWebSpeech();
         setStatus('Escuchando · modo básico (sin diarización)', 'warn');
+        setQuality('basic', 'Modo básico · sin identificar hablantes');
+        showQuickActions();
         return;
       } catch { await stop(); setStatus('No se pudo iniciar', 'error'); return; }
     }
     setStatus('Tu navegador no es compatible. Usa Chrome o Edge.', 'error');
+    setQuality('error', 'No disponible');
     await stop();
   }
 
@@ -506,6 +544,9 @@
       try { state.webSpeech.stop(); } catch (_) {}
       state.webSpeech = null;
     }
+    stopAudioViz();
+    hideQuickActions();
+    setQuality('');
     cleanupAudio();
     releaseWakeLock();
     renderInterim('', null);
@@ -538,11 +579,72 @@
   function cleanupAudio() {
     if (state.audioProcessor) { try { state.audioProcessor.disconnect(); } catch (_) {} state.audioProcessor = null; }
     if (state.audioSource) { try { state.audioSource.disconnect(); } catch (_) {} state.audioSource = null; }
+    if (state.audioAnalyser) { try { state.audioAnalyser.disconnect(); } catch (_) {} state.audioAnalyser = null; }
     if (state.audioCtx) { try { state.audioCtx.close(); } catch (_) {} state.audioCtx = null; }
     if (state.micStream) {
       state.micStream.getTracks().forEach(t => t.stop());
       state.micStream = null;
     }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // AUDIO VISUALIZER
+  // ════════════════════════════════════════════════════════════════
+  function startAudioViz() {
+    const bars = el.audioViz.querySelectorAll('span');
+    if (!bars.length || !state.audioAnalyser) return;
+    el.audioViz.classList.add('active', 'listening');
+    const data = new Uint8Array(state.audioAnalyser.frequencyBinCount);
+    const tick = () => {
+      if (!state.audioAnalyser) return;
+      state.audioAnalyser.getByteFrequencyData(data);
+      const step = Math.floor(data.length / bars.length);
+      let sum = 0;
+      bars.forEach((bar, i) => {
+        const v = data[i * step] || 0;
+        const h = Math.max(3, Math.min(14, (v / 255) * 14 + 2));
+        bar.style.height = h + 'px';
+        sum += v;
+      });
+      const avg = sum / bars.length;
+      el.audioViz.classList.toggle('low', avg < 8);
+      state.audioVizRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+  function stopAudioViz() {
+    if (state.audioVizRaf) { cancelAnimationFrame(state.audioVizRaf); state.audioVizRaf = null; }
+    el.audioViz.classList.remove('active', 'listening', 'low');
+    el.audioViz.querySelectorAll('span').forEach(b => b.style.height = '4px');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // QUICK ACTIONS (durante escucha)
+  // ════════════════════════════════════════════════════════════════
+  function showQuickActions() {
+    el.quickActions.hidden = false;
+  }
+  function hideQuickActions() {
+    el.quickActions.hidden = true;
+  }
+  function markCurrentMoment() {
+    if (state.lastSegmentEl) {
+      state.lastSegmentEl.classList.toggle('marked');
+      vibrate(20);
+      const marked = state.lastSegmentEl.classList.contains('marked');
+      feedbackToast(marked ? 'Marcado' : 'Marca quitada', 'ok');
+      el.qaMark.classList.toggle('marked', marked);
+    } else {
+      feedbackToast('Nada que marcar todavía', '');
+    }
+  }
+  function askToRepeat() {
+    speak('¿Puedes repetir, por favor?', el.qaRepeat);
+    vibrate(30);
+  }
+  function askToSlowDown() {
+    speak('Más despacio, por favor.', el.qaSlower);
+    vibrate(30);
   }
 
   async function toggle() {
@@ -720,6 +822,10 @@
     if (btn) btn.disabled = true;
     setStatus('Generando voz…');
     addToRecentSpoken(text);
+    const originalLabel = btn ? btn.innerHTML : null;
+    if (btn && btn.id === 'btnSpeak') {
+      btn.innerHTML = '<span class="spinner"></span> Generando…';
+    }
     try {
       const res = await fetch('/api/tts.php', {
         method: 'POST',
@@ -740,7 +846,10 @@
     } catch {
       fallbackTts(text);
     } finally {
-      if (btn) btn.disabled = false;
+      if (btn) {
+        btn.disabled = false;
+        if (originalLabel) btn.innerHTML = originalLabel;
+      }
     }
   }
   function fallbackTts(text) {
@@ -1207,6 +1316,7 @@
   function init() {
     applyFontSize();
     updateLangLabel();
+    applyFaceToFace();
     setupTabs();
     setupPTT();
     setupSettings();
@@ -1214,6 +1324,11 @@
     renderQuickPhrases();
     renderRecentSpoken();
     activateView('listen');
+    setupHeaderScroll();
+    setupKeyboardShortcuts();
+    setupQuickActions();
+    setupTipMic();
+    setupF2F();
 
     // route from manifest shortcuts
     const params = new URLSearchParams(location.search);
@@ -1289,6 +1404,92 @@
     setupServiceWorker();
     setupInstallPrompt();
     setStatus('Listo · pulsa el micrófono para empezar');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // CARA A CARA
+  // ════════════════════════════════════════════════════════════════
+  function applyFaceToFace() {
+    document.body.classList.toggle('face-to-face', state.faceToFace);
+    el.btnF2F.classList.toggle('active', state.faceToFace);
+  }
+  function toggleFaceToFace() {
+    state.faceToFace = !state.faceToFace;
+    localStorage.setItem('pauma-f2f', state.faceToFace ? '1' : '0');
+    applyFaceToFace();
+    feedbackToast(state.faceToFace ? 'Modo cara a cara activo' : 'Modo normal', 'ok');
+    vibrate(20);
+  }
+  function setupF2F() {
+    el.btnF2F.addEventListener('click', toggleFaceToFace);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // HEADER SHADOW al scroll + TIP MIC primera vez
+  // ════════════════════════════════════════════════════════════════
+  function setupHeaderScroll() {
+    el.views.forEach(v => {
+      v.addEventListener('scroll', () => {
+        el.appHeader.classList.toggle('scrolled', v.scrollTop > 4);
+      }, { passive: true });
+    });
+  }
+
+  function setupTipMic() {
+    if (localStorage.getItem('pauma-first-listen') === '1') return;
+    // primera visita: mostrar tip a los 4s si no ha pulsado el mic
+    setTimeout(() => {
+      if (!state.listening && state.view === 'listen') {
+        el.tipMic.hidden = false;
+        setTimeout(() => { el.tipMic.hidden = true; }, 6000);
+      }
+    }, 4000);
+    el.tabMic.addEventListener('click', () => {
+      el.tipMic.hidden = true;
+      localStorage.setItem('pauma-first-listen', '1');
+    }, { once: true });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // KEYBOARD SHORTCUTS
+  // ════════════════════════════════════════════════════════════════
+  function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      const inEditable = e.target.matches('input, textarea, [contenteditable]');
+      if (inEditable) {
+        // ESC en input limpia/cierra
+        if (e.key === 'Escape') {
+          if (state.sosActive) closeSos();
+          else if (!el.sheet.hidden) closeSessionSheet();
+          else if (!el.modalRename.hidden) closeRenameSpeaker();
+        }
+        return;
+      }
+
+      if (e.key === ' ' && state.view === 'listen') {
+        e.preventDefault();
+        toggle();
+      } else if (e.key === 'Escape') {
+        if (state.sosActive) closeSos();
+        else if (!el.sheet.hidden) closeSessionSheet();
+        else if (!el.modalRename.hidden) closeRenameSpeaker();
+        else if (state.listening) stop();
+      } else if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey) {
+        if (!state.sosActive) { e.preventDefault(); openSos(); }
+      } else if (e.key === '/' && state.view === 'history') {
+        e.preventDefault();
+        el.histSearch.focus();
+      }
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // QUICK ACTIONS setup
+  // ════════════════════════════════════════════════════════════════
+  function setupQuickActions() {
+    el.qaMark.addEventListener('click', markCurrentMoment);
+    el.qaRepeat.addEventListener('click', askToRepeat);
+    el.qaSlower.addEventListener('click', askToSlowDown);
   }
 
   // ════════════════════════════════════════════════════════════════
