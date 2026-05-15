@@ -1,0 +1,46 @@
+# Pauma · Apache config para Hostinger
+
+# ── Errores personalizados ─────────────────────────────────
+ErrorDocument 404 /404.html
+
+# ── Forzar HTTPS ───────────────────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ── Proteger archivos sensibles ────────────────────────────
+<FilesMatch "^(\.env.*|composer\.(json|lock)|README\.md|deploy\.sh|.*\.sh)$">
+  Require all denied
+</FilesMatch>
+
+# ── Bloquear acceso a /src/ ────────────────────────────────
+RedirectMatch 404 ^/src/.*$
+
+# ── Cabeceras de seguridad ─────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(self), payment=(), usb=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+
+  # cache largo para assets versionados
+  <FilesMatch "\.(css|js|svg|png|jpg|webp|woff2)$">
+    Header set Cache-Control "public, max-age=2592000, must-revalidate"
+  </FilesMatch>
+  # html siempre validado
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ── Compresion ─────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# ── MIME types ─────────────────────────────────────────────
+AddType application/manifest+json .json
+AddType image/svg+xml .svg

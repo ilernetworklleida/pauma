@@ -1,10 +1,12 @@
 {
   "name": "Pauma · Transcripción en vivo",
   "short_name": "Pauma",
-  "description": "Transcripción en vivo de conversaciones para personas sordas. Gratis, sin instalar y respeta tu privacidad.",
+  "description": "Transcripción en vivo con identificación de hablantes y voz natural para responder. Para personas sordas y sus familias.",
+  "id": "/",
   "start_url": "/app/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
   "theme_color": "#0a0a0a",
   "background_color": "#0a0a0a",
@@ -12,6 +14,12 @@
   "dir": "ltr",
   "categories": ["accessibility", "utilities", "productivity"],
   "icons": [
+    {
+      "src": "/assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/assets/icons/icon-192.png",
       "sizes": "192x192",
@@ -35,8 +43,33 @@
     {
       "name": "Empezar a transcribir",
       "short_name": "Transcribir",
-      "url": "/app/",
+      "url": "/app/?start=listen",
       "description": "Abre Pauma listo para escuchar"
+    },
+    {
+      "name": "Yo hablo",
+      "short_name": "Yo hablo",
+      "url": "/app/?view=speak",
+      "description": "Modo texto a voz"
+    },
+    {
+      "name": "SOS",
+      "short_name": "SOS",
+      "url": "/app/?view=sos",
+      "description": "Modo emergencia para comunicar con desconocidos"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/app/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        { "name": "audio", "accept": ["audio/*"] }
+      ]
+    }
+  }
 }

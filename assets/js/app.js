@@ -1,31 +1,78 @@
-/* Pauma · app.js · v0.2
- * Transcripción en vivo con diarización, modo "yo hablo", historial, tono y onboarding.
- * Sin dependencias externas. Compatible con Chrome/Edge en Android y desktop.
+/* Pauma · app.js · v0.3
+ * Transcripción en vivo con diarización, modo "yo hablo", historial con buscador
+ * y exportación, modo SOS, push-to-talk, estadísticas, onboarding y auto-update PWA.
+ * Sin dependencias externas. Chrome/Edge Android y desktop.
  */
 (() => {
   'use strict';
 
   // ════════════════════════════════════════════════════════════════
-  // STATE
+  // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const DEFAULT_PHRASES = [
-    'Hola, soy sorda. ¿Puedes escribir aquí?',
-    'Más despacio, por favor.',
-    'No te entiendo, ¿puedes repetir?',
-    'Por favor, mírame a los ojos cuando hablas.',
-    'Gracias.',
+  const VERSION = 'v0.3';
+
+  const PHRASE_CATEGORIES = [
+    { id: 'general',    label: 'General' },
+    { id: 'urgencia',   label: 'Urgencia' },
+    { id: 'medico',     label: 'Médico' },
+    { id: 'compras',    label: 'Compras' },
+    { id: 'transporte', label: 'Transporte' },
+    { id: 'social',     label: 'Social' },
   ];
+
+  const DEFAULT_PHRASES = {
+    general: [
+      'Hola, soy sorda. ¿Puedes escribir aquí?',
+      'Más despacio, por favor.',
+      'No te entiendo, ¿puedes repetir?',
+      'Por favor, mírame a los ojos cuando hablas.',
+      'Gracias.',
+    ],
+    urgencia: [
+      'Necesito ayuda urgente.',
+      'Llama a una ambulancia, por favor.',
+      'Soy sorda, no puedo oír las indicaciones por megafonía.',
+      'Mi pareja también es sorda.',
+    ],
+    medico: [
+      'Soy sorda. Por favor, escribe aquí lo que me digas.',
+      '¿Me puedes explicar el tratamiento por escrito?',
+      'No tengo alergias conocidas.',
+      '¿Puedes ponerme la receta por escrito?',
+    ],
+    compras: [
+      '¿Me puedes apuntar el precio aquí?',
+      '¿Tenéis esto en otro color?',
+      '¿Aceptáis tarjeta?',
+      'No, gracias, solo estoy mirando.',
+    ],
+    transporte: [
+      '¿A qué hora sale el siguiente?',
+      'Por favor, escríbeme la dirección.',
+      'Necesito que el conductor me avise cuando lleguemos.',
+      '¿Puedes apuntarme el número de andén?',
+    ],
+    social: [
+      'Encantada de conocerte.',
+      '¿Cómo te llamas?',
+      '¿Te apetece tomar algo?',
+      'Lo siento, no he entendido.',
+    ],
+  };
 
   const state = {
     view: 'listen',
+    sosActive: false,
+    sosOrigin: null, // a qué vista volver al cerrar SOS
     lang: localStorage.getItem('pauma-lang') || 'es-ES',
     fontSize: localStorage.getItem('pauma-fontsize') || 'normal',
     showEmotion: localStorage.getItem('pauma-emotion') !== '0',
     saveHistory: localStorage.getItem('pauma-history') !== '0',
+    pushToTalk: localStorage.getItem('pauma-ptt') === '1',
 
     listening: false,
-    provider: null,      // 'deepgram' | 'webspeech'
+    provider: null,
     ws: null,
     audioCtx: null,
     micStream: null,
@@ -34,18 +81,36 @@
     webSpeech: null,
     wakeLock: null,
     keepAliveTimer: null,
+    currentKeyId: null,
 
-    speakers: loadSpeakers(),
+    speakers: loadJSON('pauma-speakers', {}),
     currentSession: null,
-    sessions: [],
     historyDb: null,
+    historySearch: '',
 
     interimEl: null,
     lastSegmentEl: null,
     lastSpeaker: null,
 
-    phrases: loadPhrases(),
+    phrases: loadJSON('pauma-phrases', { ...DEFAULT_PHRASES }),
+    activeCategory: localStorage.getItem('pauma-cat') || 'general',
+    recentSpoken: loadJSON('pauma-recent-spoken', []),
+
+    activeSessionDetailId: null,
+    swReg: null,
   };
+
+  function loadJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      return parsed ?? fallback;
+    } catch { return fallback; }
+  }
+  function saveJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+  }
 
   // ════════════════════════════════════════════════════════════════
   // DOM
@@ -56,30 +121,42 @@
   const el = {
     brandDot: $('#brand-dot'),
     btnLang: $('#btnLang'),
+    btnSos: $('#btnSos'),
     langLabel: $('#langLabel'),
     statusLine: $('#statusLine'),
 
+    views: $$('.view'),
     transcript: $('#transcript'),
     welcome: $('#welcome'),
 
-    views: $$('.view'),
-    tabbar: $('.tabbar'),
     tabs: $$('.tab'),
     tabMic: $('#tabMic'),
 
     speakText: $('#speakText'),
     btnSpeak: $('#btnSpeak'),
     btnSpeakClear: $('#btnSpeakClear'),
+    categories: $('#categories'),
     quickList: $('#quickList'),
     btnAddPhrase: $('#btnAddPhrase'),
+    recentSpokenWrap: $('#recentSpokenWrap'),
+    recentSpoken: $('#recentSpoken'),
 
     historyList: $('#historyList'),
     histEmpty: $('#histEmpty'),
+    histSearch: $('#histSearch'),
     btnHistClear: $('#btnHistClear'),
 
     speakersList: $('#speakersList'),
     setEmotion: $('#setEmotion'),
     setHistory: $('#setHistory'),
+    setPTT: $('#setPTT'),
+    statsGrid: $('#statsGrid'),
+
+    sosBtn: $('#btnSos'),
+    sosTranscript: $('#sosTranscript'),
+    sosInput: $('#sosInput'),
+    sosSpeak: $('#sosSpeak'),
+    sosClose: $('#btnSosClose'),
 
     onboarding: $('#onboarding'),
     obSlides: $$('.ob-slide'),
@@ -91,6 +168,17 @@
     renameInput: $('#renameInput'),
     renameCancel: $('#renameCancel'),
     renameSave: $('#renameSave'),
+
+    sheet: $('#sheetSession'),
+    sheetBack: $('#sheetBack'),
+    sheetTitle: $('#sheetTitle'),
+    sheetShare: $('#sheetShare'),
+    sheetDownload: $('#sheetDownload'),
+    sheetDelete: $('#sheetDelete'),
+    sheetBody: $('#sheetBody'),
+
+    updateToast: $('#updateToast'),
+    btnUpdate: $('#btnUpdate'),
   };
 
   // ════════════════════════════════════════════════════════════════
@@ -103,37 +191,17 @@
       });
 
   const nowHM = () => new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  const nowFull = () => new Date().toLocaleString('es-ES', {
-    weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  const fmtDate = (ts) => new Date(ts).toLocaleString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+  });
+  const fmtDateShort = (ts) => new Date(ts).toLocaleString('es-ES', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
   });
 
   const setStatus = (text, kind = '') => {
     el.statusLine.textContent = text || '';
     el.statusLine.className = 'status-line' + (kind ? ' ' + kind : '');
   };
-
-  const escapeText = (s) => s.replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
-
-  function loadSpeakers() {
-    try {
-      return JSON.parse(localStorage.getItem('pauma-speakers') || '{}');
-    } catch { return {}; }
-  }
-  function saveSpeakers() {
-    localStorage.setItem('pauma-speakers', JSON.stringify(state.speakers));
-  }
-  function loadPhrases() {
-    try {
-      const raw = localStorage.getItem('pauma-phrases');
-      if (!raw) return [...DEFAULT_PHRASES];
-      return JSON.parse(raw);
-    } catch { return [...DEFAULT_PHRASES]; }
-  }
-  function savePhrases() {
-    localStorage.setItem('pauma-phrases', JSON.stringify(state.phrases));
-  }
 
   function speakerLabel(idx) {
     if (idx == null) return null;
@@ -142,63 +210,84 @@
     return 'Persona ' + (Number(idx) + 1);
   }
 
+  function vibrate(pattern) {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(pattern); } catch (_) {}
+    }
+  }
+
   // ════════════════════════════════════════════════════════════════
-  // STORAGE (IndexedDB para sesiones de historial)
+  // STORAGE (IndexedDB)
   // ════════════════════════════════════════════════════════════════
   function openDb() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('pauma', 1);
-      req.onupgradeneeded = () => {
+      const req = indexedDB.open('pauma', 2);
+      req.onupgradeneeded = (e) => {
         const db = req.result;
         if (!db.objectStoreNames.contains('sessions')) {
           const s = db.createObjectStore('sessions', { keyPath: 'id' });
           s.createIndex('started', 'started');
         }
+        // future stores can be added here
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
   }
-
-  async function dbPutSession(session) {
+  async function dbPutSession(s) {
     if (!state.historyDb) state.historyDb = await openDb();
-    return new Promise((resolve, reject) => {
+    return new Promise((res, rej) => {
       const tx = state.historyDb.transaction('sessions', 'readwrite');
-      tx.objectStore('sessions').put(session);
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
+      tx.objectStore('sessions').put(s);
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
     });
   }
-
   async function dbGetSessions() {
     if (!state.historyDb) state.historyDb = await openDb();
-    return new Promise((resolve, reject) => {
+    return new Promise((res, rej) => {
       const out = [];
       const tx = state.historyDb.transaction('sessions', 'readonly');
-      const store = tx.objectStore('sessions');
-      const idx = store.index('started');
-      idx.openCursor(null, 'prev').onsuccess = (e) => {
+      tx.objectStore('sessions').index('started').openCursor(null, 'prev').onsuccess = (e) => {
         const cur = e.target.result;
         if (cur) { out.push(cur.value); cur.continue(); }
-        else resolve(out);
+        else res(out);
       };
-      tx.onerror = () => reject(tx.error);
+      tx.onerror = () => rej(tx.error);
     });
   }
-
-  async function dbDeleteAllSessions() {
+  async function dbGetSession(id) {
     if (!state.historyDb) state.historyDb = await openDb();
-    return new Promise((resolve, reject) => {
+    return new Promise((res, rej) => {
+      const tx = state.historyDb.transaction('sessions', 'readonly');
+      const r = tx.objectStore('sessions').get(id);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  async function dbDeleteSession(id) {
+    if (!state.historyDb) state.historyDb = await openDb();
+    return new Promise((res, rej) => {
+      const tx = state.historyDb.transaction('sessions', 'readwrite');
+      tx.objectStore('sessions').delete(id);
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+  }
+  async function dbDeleteAll() {
+    if (!state.historyDb) state.historyDb = await openDb();
+    return new Promise((res, rej) => {
       const tx = state.historyDb.transaction('sessions', 'readwrite');
       tx.objectStore('sessions').clear();
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
     });
   }
 
   function newSession() {
     return {
       id: uuid(),
+      title: '',
       started: Date.now(),
       ended: null,
       lang: state.lang,
@@ -214,14 +303,14 @@
   }
 
   // ════════════════════════════════════════════════════════════════
-  // EMOTION (heurística ligera)
+  // EMOTION
   // ════════════════════════════════════════════════════════════════
   const EMOTION_RULES = [
-    { tag: 'irritado',  re: /(!{2,}|maldit|cabr|joder|qué\s+rabia|qué\s+coñazo)/i },
-    { tag: 'alegre',    re: /(jajaja+|jeje+|qué\s+bien|me\s+encanta|guay|genial)/i },
-    { tag: 'preocupado',re: /(no\s+sé|estoy\s+preocupad|me\s+da\s+miedo|qué\s+vamos\s+a\s+hacer)/i },
-    { tag: 'cariñoso',  re: /(cariño|mi\s+amor|te\s+quiero|cielo|guapa|guapo)/i },
-    { tag: 'duda',      re: /\?$/ },
+    { tag: 'irritado',  re: /(!{2,}|maldit|cabr|joder|qué\s+rabia|qué\s+coñazo|estoy\s+harto)/i },
+    { tag: 'alegre',    re: /(jajaja+|jeje+|qué\s+bien|me\s+encanta|guay|genial|qué\s+alegría)/i },
+    { tag: 'preocupado',re: /(no\s+sé|estoy\s+preocupad|me\s+da\s+miedo|tengo\s+miedo|qué\s+vamos\s+a\s+hacer)/i },
+    { tag: 'cariñoso',  re: /(cariño|mi\s+amor|te\s+quiero|cielo|guapa|guapo|tesoro)/i },
+    { tag: 'pregunta',  re: /\?$/ },
   ];
   function detectEmotion(text) {
     if (!state.showEmotion || !text) return null;
@@ -232,7 +321,7 @@
   }
 
   // ════════════════════════════════════════════════════════════════
-  // TRANSCRIBE: Deepgram (WebSocket) + fallback Web Speech API
+  // TRANSCRIBE (Deepgram + fallback Web Speech)
   // ════════════════════════════════════════════════════════════════
   async function getProviderConfig() {
     const lang = state.lang.startsWith('ca') ? 'ca' : state.lang.startsWith('en') ? 'en' : 'es';
@@ -245,10 +334,10 @@
     } catch { return null; }
   }
 
-  function floatTo16BitPCM(float32) {
-    const out = new Int16Array(float32.length);
-    for (let i = 0; i < float32.length; i++) {
-      const s = Math.max(-1, Math.min(1, float32[i]));
+  function floatTo16BitPCM(f32) {
+    const out = new Int16Array(f32.length);
+    for (let i = 0; i < f32.length; i++) {
+      const s = Math.max(-1, Math.min(1, f32[i]));
       out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
     }
     return out.buffer;
@@ -259,6 +348,7 @@
     const url = cfg.ws_url + '?' + params.toString();
     const ws = new WebSocket(url, ['token', cfg.token]);
     state.ws = ws;
+    state.currentKeyId = cfg.key_id || null;
 
     return new Promise((resolve, reject) => {
       const fail = (err) => { cleanupAudio(); reject(err); };
@@ -267,14 +357,12 @@
         try {
           state.micStream = await navigator.mediaDevices.getUserMedia({
             audio: {
-              channelCount: 1,
-              sampleRate: 16000,
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
+              channelCount: 1, sampleRate: 16000,
+              echoCancellation: true, noiseSuppression: true, autoGainControl: true,
             },
           });
-          const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          const ctx = new Ctx({ sampleRate: 16000 });
           state.audioCtx = ctx;
           const source = ctx.createMediaStreamSource(state.micStream);
           state.audioSource = source;
@@ -282,19 +370,14 @@
           state.audioProcessor = processor;
           processor.onaudioprocess = (e) => {
             if (ws.readyState !== 1) return;
-            const input = e.inputBuffer.getChannelData(0);
-            ws.send(floatTo16BitPCM(input));
+            ws.send(floatTo16BitPCM(e.inputBuffer.getChannelData(0)));
           };
           source.connect(processor);
           processor.connect(ctx.destination);
 
-          // keep-alive: send empty keepalive every 8s
           state.keepAliveTimer = setInterval(() => {
-            if (ws.readyState === 1) {
-              ws.send(JSON.stringify({ type: 'KeepAlive' }));
-            }
+            if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'KeepAlive' }));
           }, 8000);
-
           resolve();
         } catch (err) { fail(err); }
       };
@@ -320,7 +403,7 @@
       if (!text) return;
 
       let speakerIdx = null;
-      if (alt.words && alt.words.length) {
+      if (alt.words?.length) {
         const counts = {};
         for (const w of alt.words) {
           if (w.speaker != null) counts[w.speaker] = (counts[w.speaker] || 0) + 1;
@@ -329,32 +412,17 @@
         if (top) speakerIdx = Number(top[0]);
       }
 
-      if (isFinal) {
-        addFinal(text, speakerIdx);
-      } else {
-        renderInterim(text, speakerIdx);
-      }
-    } else if (data.type === 'UtteranceEnd') {
-      // marker, nothing to do; the next final will draw a new bubble
-    } else if (data.type === 'Metadata') {
-      // session info
-    } else if (data.type === 'SpeechStarted') {
-      // VAD started
+      if (isFinal) addFinal(text, speakerIdx);
+      else renderInterim(text, speakerIdx);
     }
   }
 
-  // ── Fallback Web Speech API ──
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
   function startWebSpeech() {
     if (!SR) throw new Error('webspeech_unsupported');
     const r = new SR();
-    r.continuous = true;
-    r.interimResults = true;
-    r.lang = state.lang;
-    r.maxAlternatives = 1;
+    r.continuous = true; r.interimResults = true; r.lang = state.lang; r.maxAlternatives = 1;
     state.webSpeech = r;
-
     r.onresult = (e) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -369,9 +437,7 @@
     r.onerror = (e) => {
       if (e.error === 'no-speech' || e.error === 'aborted') return;
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        setStatus('Permiso de micrófono denegado', 'error');
-        stop();
-        return;
+        setStatus('Permiso de micrófono denegado', 'error'); stop(); return;
       }
       setStatus('Error: ' + e.error, 'error');
     };
@@ -392,50 +458,38 @@
     el.tabMic.classList.add('listening');
     el.tabMic.setAttribute('aria-label', 'Detener');
     setStatus('Iniciando…');
-    hideWelcome();
-    activateView('listen');
-
+    if (!state.sosActive) { hideWelcome(); activateView('listen'); }
     state.currentSession = newSession();
-
     await requestWakeLock();
+    vibrate(40);
 
-    // Try Deepgram first
     const cfg = await getProviderConfig();
-    if (cfg && cfg.provider === 'deepgram' && cfg.token) {
+    if (cfg?.provider === 'deepgram' && cfg.token) {
       try {
         state.provider = 'deepgram';
         await startDeepgram(cfg);
         setStatus('Escuchando · alta calidad · identifica hablantes', 'ok');
         return;
-      } catch (err) {
-        console.warn('Deepgram failed, falling back to Web Speech', err);
-      }
+      } catch (err) { console.warn('Deepgram failed, fallback', err); }
     }
-
-    // Fallback to Web Speech API
     if (SR) {
       try {
         state.provider = 'webspeech';
         startWebSpeech();
-        setStatus('Escuchando · modo básico (sin identificar hablantes)', 'warn');
+        setStatus('Escuchando · modo básico (sin diarización)', 'warn');
         return;
-      } catch (err) {
-        setStatus('No se pudo iniciar la transcripción', 'error');
-        await stop();
-        return;
-      }
+      } catch { await stop(); setStatus('No se pudo iniciar', 'error'); return; }
     }
-
     setStatus('Tu navegador no es compatible. Usa Chrome o Edge.', 'error');
     await stop();
   }
 
   async function stop() {
     state.listening = false;
-    clearInterval(state.keepAliveTimer);
-    state.keepAliveTimer = null;
+    clearInterval(state.keepAliveTimer); state.keepAliveTimer = null;
     el.brandDot.classList.remove('listening');
     el.tabMic.classList.remove('listening');
+    el.tabMic.classList.remove('ptt');
     el.tabMic.setAttribute('aria-label', 'Empezar a escuchar');
 
     if (state.ws) {
@@ -451,10 +505,23 @@
     releaseWakeLock();
     renderInterim('', null);
 
+    // revoke temp key best-effort
+    if (state.currentKeyId) {
+      fetch('/api/revoke.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key_id: state.currentKeyId }),
+        keepalive: true,
+        credentials: 'same-origin',
+      }).catch(() => {});
+      state.currentKeyId = null;
+    }
+
     await persistCurrentSession();
     state.currentSession = null;
     state.lastSpeaker = null;
     state.lastSegmentEl = null;
+    vibrate(20);
     setStatus('En pausa');
   }
 
@@ -478,6 +545,30 @@
     else await start();
   }
 
+  // ── Push-to-Talk handlers ──
+  function setupPTT() {
+    let pressTimer = null;
+    const startPress = (e) => {
+      if (!state.pushToTalk) return;
+      e.preventDefault();
+      el.tabMic.classList.add('ptt');
+      pressTimer = setTimeout(() => { start(); }, 150);
+    };
+    const endPress = (e) => {
+      if (!state.pushToTalk) return;
+      e.preventDefault();
+      clearTimeout(pressTimer);
+      el.tabMic.classList.remove('ptt');
+      if (state.listening) stop();
+    };
+    el.tabMic.addEventListener('touchstart', startPress, { passive: false });
+    el.tabMic.addEventListener('touchend', endPress);
+    el.tabMic.addEventListener('touchcancel', endPress);
+    el.tabMic.addEventListener('mousedown', startPress);
+    el.tabMic.addEventListener('mouseup', endPress);
+    el.tabMic.addEventListener('mouseleave', endPress);
+  }
+
   // ════════════════════════════════════════════════════════════════
   // WAKE LOCK
   // ════════════════════════════════════════════════════════════════
@@ -489,42 +580,35 @@
     } catch (_) {}
   }
   function releaseWakeLock() {
-    if (state.wakeLock) {
-      state.wakeLock.release().catch(() => {});
-      state.wakeLock = null;
-    }
+    if (state.wakeLock) { state.wakeLock.release().catch(() => {}); state.wakeLock = null; }
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.listening && !state.wakeLock) {
-      requestWakeLock();
-    }
+    if (document.visibilityState === 'visible' && state.listening && !state.wakeLock) requestWakeLock();
   });
 
   // ════════════════════════════════════════════════════════════════
-  // RENDER
+  // RENDER (segments)
   // ════════════════════════════════════════════════════════════════
   function hideWelcome() { if (el.welcome) el.welcome.style.display = 'none'; }
   function showWelcome() { if (el.welcome) el.welcome.style.display = ''; }
-
-  function scrollTranscript() {
-    requestAnimationFrame(() => {
-      el.transcript.scrollTop = el.transcript.scrollHeight;
-    });
+  function scrollTranscript(target) {
+    requestAnimationFrame(() => { target.scrollTop = target.scrollHeight; });
   }
 
   function renderInterim(text, speakerIdx) {
+    const container = state.sosActive ? el.sosTranscript : el.transcript;
     if (!text) {
       if (state.interimEl) { state.interimEl.remove(); state.interimEl = null; }
       return;
     }
     if (!state.interimEl) {
       state.interimEl = document.createElement('div');
-      state.interimEl.className = 'segment interim';
-      el.transcript.appendChild(state.interimEl);
+      state.interimEl.className = state.sosActive ? 'seg interim' : 'segment interim';
+      container.appendChild(state.interimEl);
     }
     if (speakerIdx != null) state.interimEl.dataset.speaker = (speakerIdx % PALETTE_LEN);
     state.interimEl.textContent = text;
-    scrollTranscript();
+    scrollTranscript(container);
   }
 
   function addFinal(text, speakerIdx) {
@@ -534,76 +618,73 @@
     const time = nowHM();
     const speaker = speakerIdx != null ? Number(speakerIdx) : null;
 
-    // group consecutive same-speaker into single bubble
-    if (state.lastSegmentEl && state.lastSpeaker === speaker && (Date.now() - (state.lastSegmentEl._t || 0)) < 12000) {
-      const span = state.lastSegmentEl.querySelector('.segment-text');
-      span.appendChild(document.createTextNode(' ' + text));
-      state.lastSegmentEl._t = Date.now();
-      if (emotion) {
-        const m = state.lastSegmentEl.querySelector('.segment-emotion');
-        if (m) m.textContent = '(' + emotion + ')';
-      }
+    if (state.sosActive) {
+      const span = document.createElement('span');
+      span.className = 'seg';
+      span.textContent = text;
+      el.sosTranscript.appendChild(span);
+      scrollTranscript(el.sosTranscript);
     } else {
-      const div = document.createElement('div');
-      div.className = 'segment';
-      if (speaker != null) div.dataset.speaker = (speaker % PALETTE_LEN);
-      div._t = Date.now();
+      if (state.lastSegmentEl && state.lastSpeaker === speaker && (Date.now() - (state.lastSegmentEl._t || 0)) < 12000) {
+        const span = state.lastSegmentEl.querySelector('.segment-text');
+        span.appendChild(document.createTextNode(' ' + text));
+        state.lastSegmentEl._t = Date.now();
+        if (emotion) {
+          let m = state.lastSegmentEl.querySelector('.segment-emotion');
+          if (!m) {
+            m = document.createElement('span');
+            m.className = 'segment-emotion';
+            state.lastSegmentEl.querySelector('.segment-meta').appendChild(m);
+          }
+          m.textContent = '(' + emotion + ')';
+        }
+      } else {
+        const div = document.createElement('div');
+        div.className = 'segment';
+        if (speaker != null) div.dataset.speaker = (speaker % PALETTE_LEN);
+        div._t = Date.now();
 
-      const meta = document.createElement('div');
-      meta.className = 'segment-meta';
+        const meta = document.createElement('div');
+        meta.className = 'segment-meta';
 
-      if (speaker != null) {
-        const sp = document.createElement('span');
-        sp.className = 'segment-speaker';
-        sp.textContent = speakerLabel(speaker);
-        sp.dataset.speaker = speaker;
-        sp.addEventListener('click', () => openRenameSpeaker(speaker));
-        meta.appendChild(sp);
+        if (speaker != null) {
+          const sp = document.createElement('span');
+          sp.className = 'segment-speaker';
+          sp.textContent = speakerLabel(speaker);
+          sp.dataset.speaker = speaker;
+          sp.addEventListener('click', () => openRenameSpeaker(speaker));
+          meta.appendChild(sp);
+        }
+
+        const t = document.createElement('span');
+        t.className = 'segment-time'; t.textContent = time;
+        meta.appendChild(t);
+
+        if (emotion) {
+          const m = document.createElement('span');
+          m.className = 'segment-emotion'; m.textContent = '(' + emotion + ')';
+          meta.appendChild(m);
+        }
+
+        const txt = document.createElement('span');
+        txt.className = 'segment-text'; txt.textContent = text;
+
+        div.appendChild(meta); div.appendChild(txt);
+        el.transcript.appendChild(div);
+        state.lastSegmentEl = div;
+        state.lastSpeaker = speaker;
       }
-
-      const t = document.createElement('span');
-      t.className = 'segment-time';
-      t.textContent = time;
-      meta.appendChild(t);
-
-      if (emotion) {
-        const m = document.createElement('span');
-        m.className = 'segment-emotion';
-        m.textContent = '(' + emotion + ')';
-        meta.appendChild(m);
-      }
-
-      const txt = document.createElement('span');
-      txt.className = 'segment-text';
-      txt.textContent = text;
-
-      div.appendChild(meta);
-      div.appendChild(txt);
-      el.transcript.appendChild(div);
-      state.lastSegmentEl = div;
-      state.lastSpeaker = speaker;
+      scrollTranscript(el.transcript);
     }
 
     if (state.currentSession) {
       state.currentSession.segments.push({ t: Date.now(), speaker, text, emotion });
-      if (state.currentSession.segments.length % 5 === 0) {
-        persistCurrentSession();
-      }
+      if (state.currentSession.segments.length % 5 === 0) persistCurrentSession();
     }
-
-    scrollTranscript();
-  }
-
-  function clearTranscript() {
-    el.transcript.querySelectorAll('.segment').forEach(n => n.remove());
-    state.interimEl = null;
-    state.lastSegmentEl = null;
-    state.lastSpeaker = null;
-    if (!state.listening) showWelcome();
   }
 
   // ════════════════════════════════════════════════════════════════
-  // SPEAKERS (rename)
+  // SPEAKERS
   // ════════════════════════════════════════════════════════════════
   let renameSpeakerIdx = null;
   function openRenameSpeaker(idx) {
@@ -612,35 +693,28 @@
     el.modalRename.hidden = false;
     setTimeout(() => el.renameInput.focus(), 50);
   }
-  function closeRenameSpeaker() {
-    el.modalRename.hidden = true;
-    renameSpeakerIdx = null;
-  }
+  function closeRenameSpeaker() { el.modalRename.hidden = true; renameSpeakerIdx = null; }
   function saveRenameSpeaker() {
     if (renameSpeakerIdx == null) return;
     const name = el.renameInput.value.trim().slice(0, 20);
     if (!state.speakers[renameSpeakerIdx]) state.speakers[renameSpeakerIdx] = {};
     state.speakers[renameSpeakerIdx].name = name;
-    saveSpeakers();
-    refreshSpeakerLabels();
+    saveJSON('pauma-speakers', state.speakers);
+    document.querySelectorAll('.segment-speaker').forEach(s => {
+      if (Number(s.dataset.speaker) === renameSpeakerIdx) s.textContent = speakerLabel(renameSpeakerIdx);
+    });
     renderSpeakersSettings();
     closeRenameSpeaker();
   }
-  function refreshSpeakerLabels() {
-    document.querySelectorAll('.segment-speaker').forEach(s => {
-      const idx = Number(s.dataset.speaker);
-      s.textContent = speakerLabel(idx);
-    });
-  }
 
   // ════════════════════════════════════════════════════════════════
-  // TTS (modo "yo hablo")
+  // TTS (modo "yo hablo" y SOS)
   // ════════════════════════════════════════════════════════════════
-  async function speak(text) {
+  async function speak(text, btn) {
     if (!text) return;
-    el.btnSpeak.disabled = true;
+    if (btn) btn.disabled = true;
     setStatus('Generando voz…');
-
+    addToRecentSpoken(text);
     try {
       const res = await fetch('/api/tts.php', {
         method: 'POST',
@@ -661,54 +735,90 @@
     } catch {
       fallbackTts(text);
     } finally {
-      el.btnSpeak.disabled = false;
+      if (btn) btn.disabled = false;
     }
   }
-
   function fallbackTts(text) {
     if (!('speechSynthesis' in window)) {
-      setStatus('Tu navegador no permite leer en voz alta', 'error');
-      return;
+      setStatus('Tu navegador no permite leer en voz alta', 'error'); return;
     }
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = state.lang;
-    u.rate = 1.0;
-    u.pitch = 1.0;
+    u.lang = state.lang; u.rate = 1.0; u.pitch = 1.0;
     u.onend = () => setStatus('');
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
     setStatus('Hablando…', 'ok');
   }
+  function addToRecentSpoken(text) {
+    const t = text.trim();
+    if (!t) return;
+    state.recentSpoken = [t, ...state.recentSpoken.filter(x => x !== t)].slice(0, 8);
+    saveJSON('pauma-recent-spoken', state.recentSpoken);
+    renderRecentSpoken();
+  }
 
+  // ════════════════════════════════════════════════════════════════
+  // QUICK PHRASES (con categorías)
+  // ════════════════════════════════════════════════════════════════
+  function renderCategories() {
+    el.categories.innerHTML = '';
+    for (const cat of PHRASE_CATEGORIES) {
+      const c = document.createElement('button');
+      c.className = 'cat-chip' + (cat.id === state.activeCategory ? ' active' : '');
+      c.type = 'button';
+      c.textContent = cat.label;
+      c.dataset.cat = cat.id;
+      c.addEventListener('click', () => {
+        state.activeCategory = cat.id;
+        localStorage.setItem('pauma-cat', cat.id);
+        renderCategories();
+        renderQuickPhrases();
+      });
+      el.categories.appendChild(c);
+    }
+  }
   function renderQuickPhrases() {
     el.quickList.innerHTML = '';
-    state.phrases.forEach((p, i) => {
+    const list = state.phrases[state.activeCategory] || [];
+    list.forEach((p, i) => {
       const row = document.createElement('button');
-      row.className = 'quick-item';
-      row.type = 'button';
-
+      row.className = 'quick-item'; row.type = 'button';
       const txt = document.createElement('span');
-      txt.className = 'quick-item-text';
-      txt.textContent = p;
+      txt.className = 'quick-item-text'; txt.textContent = p;
       row.appendChild(txt);
-
       const del = document.createElement('span');
       del.className = 'quick-item-delete';
       del.textContent = '×';
       del.setAttribute('aria-label', 'Borrar frase');
       del.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.phrases.splice(i, 1);
-        savePhrases();
+        state.phrases[state.activeCategory].splice(i, 1);
+        saveJSON('pauma-phrases', state.phrases);
         renderQuickPhrases();
       });
       row.appendChild(del);
-
       row.addEventListener('click', () => {
         el.speakText.value = p;
-        speak(p);
+        speak(p, el.btnSpeak);
       });
       el.quickList.appendChild(row);
+    });
+  }
+  function renderRecentSpoken() {
+    if (!state.recentSpoken.length) {
+      el.recentSpokenWrap.hidden = true;
+      return;
+    }
+    el.recentSpokenWrap.hidden = false;
+    el.recentSpoken.innerHTML = '';
+    state.recentSpoken.forEach((p) => {
+      const row = document.createElement('button');
+      row.className = 'quick-item'; row.type = 'button';
+      const txt = document.createElement('span');
+      txt.className = 'quick-item-text'; txt.textContent = p;
+      row.appendChild(txt);
+      row.addEventListener('click', () => { el.speakText.value = p; speak(p, el.btnSpeak); });
+      el.recentSpoken.appendChild(row);
     });
   }
 
@@ -720,90 +830,89 @@
     el.views.forEach(v => { v.hidden = v.dataset.view !== view; });
     el.tabs.forEach(t => {
       const target = t.dataset.target;
-      const isActive = target === view || (target === 'listen-view' && view === 'listen');
+      const isActive = (target === view) || (target === 'listen-view' && view === 'listen');
       t.classList.toggle('active', isActive && target !== 'listen');
     });
     if (view === 'history') renderHistory();
-    if (view === 'settings') renderSpeakersSettings();
+    if (view === 'settings') { renderSpeakersSettings(); renderStats(); }
   }
-
   function setupTabs() {
     el.tabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        if (state.pushToTalk && tab === el.tabMic) return;
         const target = tab.dataset.target;
-        if (target === 'listen') { toggle(); }
-        else if (target === 'listen-view') { activateView('listen'); }
-        else { activateView(target); }
+        if (target === 'listen') toggle();
+        else if (target === 'listen-view') activateView('listen');
+        else activateView(target);
       });
     });
   }
 
   // ════════════════════════════════════════════════════════════════
-  // HISTORY VIEW
+  // HISTORY
   // ════════════════════════════════════════════════════════════════
   async function renderHistory() {
     let sessions = [];
     try { sessions = await dbGetSessions(); } catch (_) {}
-    state.sessions = sessions;
 
-    if (!sessions.length) {
+    const q = state.historySearch.trim().toLowerCase();
+    let filtered = sessions;
+    if (q) {
+      filtered = sessions.filter(s =>
+        (s.title || '').toLowerCase().includes(q) ||
+        s.segments.some(seg => seg.text.toLowerCase().includes(q))
+      );
+    }
+
+    if (!filtered.length) {
+      el.historyList.innerHTML = '';
       el.historyList.hidden = true;
       el.histEmpty.hidden = false;
+      el.histEmpty.querySelector('p').textContent = q
+        ? `No hay resultados para "${q}".`
+        : 'Todavía no hay conversaciones guardadas.';
       return;
     }
     el.historyList.hidden = false;
     el.histEmpty.hidden = true;
     el.historyList.innerHTML = '';
 
-    for (const s of sessions) {
+    for (const s of filtered) {
       const item = document.createElement('button');
-      item.className = 'hist-item';
-      item.type = 'button';
+      item.className = 'hist-item'; item.type = 'button';
 
       const head = document.createElement('div');
       head.className = 'hist-item-head';
       const date = document.createElement('span');
       date.className = 'hist-item-date';
-      date.textContent = new Date(s.started).toLocaleString('es-ES', {
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-      });
+      date.textContent = s.title?.trim() || fmtDateShort(s.started);
       const meta = document.createElement('span');
       meta.className = 'hist-item-meta';
-      const duration = s.ended ? Math.round((s.ended - s.started) / 60000) : 0;
-      meta.textContent = `${s.segments.length} frases · ${duration} min`;
-      head.appendChild(date);
-      head.appendChild(meta);
+      const dur = s.ended ? Math.max(1, Math.round((s.ended - s.started) / 60000)) : 0;
+      meta.textContent = `${s.segments.length} frases · ${dur} min`;
+      head.appendChild(date); head.appendChild(meta);
 
       const preview = document.createElement('div');
       preview.className = 'hist-item-preview';
-      preview.textContent = s.segments.slice(0, 3).map(seg => seg.text).join(' ');
+      let previewText = s.segments.slice(0, 3).map(seg => seg.text).join(' ');
+      if (q) previewText = previewText.replace(new RegExp(`(${escapeRegex(q)})`, 'gi'), '<mark>$1</mark>');
+      preview.innerHTML = previewText;
 
-      item.appendChild(head);
-      item.appendChild(preview);
-      item.addEventListener('click', () => openSessionDetail(s));
+      item.appendChild(head); item.appendChild(preview);
+      item.addEventListener('click', () => openSessionSheet(s.id));
       el.historyList.appendChild(item);
     }
   }
+  function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-  function openSessionDetail(session) {
-    el.historyList.innerHTML = '';
-    el.histEmpty.hidden = true;
+  // ── session detail sheet ──
+  async function openSessionSheet(id) {
+    const session = await dbGetSession(id);
+    if (!session) return;
+    state.activeSessionDetailId = id;
+    el.sheetTitle.textContent = session.title?.trim() || fmtDate(session.started);
+    el.sheetBody.innerHTML = '';
 
-    const back = document.createElement('div');
-    back.className = 'hist-back';
-    back.innerHTML = '← Volver';
-    back.addEventListener('click', () => renderHistory());
-    el.historyList.appendChild(back);
-
-    const title = document.createElement('div');
-    title.className = 'view-title';
-    title.textContent = new Date(session.started).toLocaleString('es-ES', {
-      weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
-    });
-    el.historyList.appendChild(title);
-
-    const wrap = document.createElement('div');
-    wrap.className = 'hist-detail';
     for (const seg of session.segments) {
       const div = document.createElement('div');
       div.className = 'segment';
@@ -830,11 +939,65 @@
       const txt = document.createElement('span');
       txt.className = 'segment-text';
       txt.textContent = seg.text;
-      div.appendChild(meta);
-      div.appendChild(txt);
-      wrap.appendChild(div);
+      div.appendChild(meta); div.appendChild(txt);
+      el.sheetBody.appendChild(div);
     }
-    el.historyList.appendChild(wrap);
+    el.sheet.hidden = false;
+  }
+  function closeSessionSheet() { el.sheet.hidden = true; state.activeSessionDetailId = null; }
+
+  async function saveSheetTitle() {
+    if (!state.activeSessionDetailId) return;
+    const title = el.sheetTitle.textContent.trim().slice(0, 80);
+    const s = await dbGetSession(state.activeSessionDetailId);
+    if (!s) return;
+    s.title = title;
+    await dbPutSession(s);
+  }
+
+  function sessionToText(session) {
+    const lines = [];
+    lines.push(`Pauma · ${session.title?.trim() || fmtDate(session.started)}`);
+    lines.push('');
+    for (const seg of session.segments) {
+      const time = new Date(seg.t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const sp = seg.speaker != null ? speakerLabel(seg.speaker) : '';
+      const em = seg.emotion ? ` (${seg.emotion})` : '';
+      lines.push(`[${time}] ${sp ? sp + ': ' : ''}${seg.text}${em}`);
+    }
+    return lines.join('\n');
+  }
+  async function shareSession() {
+    if (!state.activeSessionDetailId) return;
+    const session = await dbGetSession(state.activeSessionDetailId);
+    if (!session) return;
+    const text = sessionToText(session);
+    const title = session.title?.trim() || 'Conversación de Pauma';
+    if (navigator.share) {
+      try { await navigator.share({ title, text }); return; } catch (_) {}
+    }
+    try { await navigator.clipboard.writeText(text); setStatus('Copiado al portapapeles', 'ok'); }
+    catch { setStatus('No se pudo compartir', 'error'); }
+  }
+  async function downloadSession() {
+    if (!state.activeSessionDetailId) return;
+    const session = await dbGetSession(state.activeSessionDetailId);
+    if (!session) return;
+    const text = sessionToText(session);
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const safeName = (session.title?.trim() || fmtDateShort(session.started)).replace(/[^a-zA-Z0-9-_ ]/g, '_');
+    a.download = `pauma-${safeName}.txt`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+  async function deleteSession() {
+    if (!state.activeSessionDetailId) return;
+    if (!confirm('¿Borrar esta conversación? No se puede deshacer.')) return;
+    await dbDeleteSession(state.activeSessionDetailId);
+    closeSessionSheet();
+    renderHistory();
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -860,17 +1023,49 @@
       name.className = 'speaker-name';
       name.textContent = speakerLabel(idx);
       const edit = document.createElement('button');
-      edit.className = 'speaker-edit';
-      edit.type = 'button';
+      edit.className = 'speaker-edit'; edit.type = 'button';
       edit.textContent = 'Cambiar';
       edit.addEventListener('click', () => openRenameSpeaker(Number(idx)));
-      row.appendChild(swatch);
-      row.appendChild(name);
-      row.appendChild(edit);
+      row.appendChild(swatch); row.appendChild(name); row.appendChild(edit);
       el.speakersList.appendChild(row);
     });
   }
+  async function renderStats() {
+    let sessions = [];
+    try { sessions = await dbGetSessions(); } catch (_) {}
+    const weekAgo = Date.now() - 7 * 86400000;
+    const last7 = sessions.filter(s => s.started >= weekAgo);
+    let totalMin = 0;
+    for (const s of last7) {
+      const dur = (s.ended || s.started) - s.started;
+      totalMin += Math.max(0, dur / 60000);
+    }
+    const segCount = last7.reduce((acc, s) => acc + s.segments.length, 0);
+    const speakerCounts = {};
+    for (const s of last7) {
+      for (const seg of s.segments) {
+        if (seg.speaker != null) speakerCounts[seg.speaker] = (speakerCounts[seg.speaker] || 0) + 1;
+      }
+    }
+    const topSpeaker = Object.entries(speakerCounts).sort((a, b) => b[1] - a[1])[0];
+    const topName = topSpeaker ? speakerLabel(topSpeaker[0]) : '—';
 
+    el.statsGrid.innerHTML = '';
+    const items = [
+      { num: last7.length, label: 'Conversaciones (7 días)' },
+      { num: Math.round(totalMin) + ' min', label: 'Tiempo total' },
+      { num: segCount, label: 'Frases transcritas' },
+      { num: topName, label: 'Persona más frecuente' },
+    ];
+    for (const it of items) {
+      const card = document.createElement('div');
+      card.className = 'stat-card';
+      const n = document.createElement('div'); n.className = 'stat-number'; n.textContent = it.num;
+      const l = document.createElement('div'); l.className = 'stat-label'; l.textContent = it.label;
+      card.appendChild(n); card.appendChild(l);
+      el.statsGrid.appendChild(card);
+    }
+  }
   function setupSettings() {
     $$('input[name="lang"]').forEach(r => {
       r.checked = r.value === state.lang;
@@ -899,19 +1094,21 @@
       state.saveHistory = el.setHistory.checked;
       localStorage.setItem('pauma-history', state.saveHistory ? '1' : '0');
     });
+    el.setPTT.checked = state.pushToTalk;
+    el.setPTT.addEventListener('change', () => {
+      state.pushToTalk = el.setPTT.checked;
+      localStorage.setItem('pauma-ptt', state.pushToTalk ? '1' : '0');
+    });
   }
-
   function applyFontSize() {
     document.body.classList.remove('fs-large', 'fs-xl');
     if (state.fontSize === 'large') document.body.classList.add('fs-large');
     else if (state.fontSize === 'xl') document.body.classList.add('fs-xl');
   }
-
   function updateLangLabel() {
     el.langLabel.textContent = state.lang.startsWith('ca') ? 'CA'
       : state.lang.startsWith('en') ? 'EN' : 'ES';
   }
-
   function cycleLang() {
     const order = ['es-ES', 'ca-ES', 'en-US'];
     const i = order.indexOf(state.lang);
@@ -923,13 +1120,35 @@
   }
 
   // ════════════════════════════════════════════════════════════════
+  // SOS
+  // ════════════════════════════════════════════════════════════════
+  function openSos() {
+    state.sosOrigin = state.view;
+    state.sosActive = true;
+    el.sosTranscript.innerHTML = '<span class="muted">Habla cerca del móvil. Pauma transcribirá automáticamente.</span>';
+    activateView('sos');
+    vibrate([60, 40, 60]);
+    if (!state.listening) start();
+  }
+  function closeSos() {
+    state.sosActive = false;
+    if (state.listening) stop();
+    activateView(state.sosOrigin === 'sos' ? 'listen' : (state.sosOrigin || 'listen'));
+    state.sosOrigin = null;
+  }
+  function sosSpeak() {
+    const t = el.sosInput.value.trim();
+    if (!t) return;
+    speak(t, el.sosSpeak);
+    el.sosInput.value = '';
+  }
+
+  // ════════════════════════════════════════════════════════════════
   // ONBOARDING
   // ════════════════════════════════════════════════════════════════
   let obIdx = 0;
   function startOnboarding() {
-    el.onboarding.hidden = false;
-    obIdx = 0;
-    showObSlide(0);
+    el.onboarding.hidden = false; obIdx = 0; showObSlide(0);
   }
   function showObSlide(i) {
     obIdx = i;
@@ -938,15 +1157,43 @@
     el.obNext.textContent = i === el.obSlides.length - 1 ? 'Empezar' : 'Siguiente';
   }
   function nextOnboarding() {
-    if (obIdx < el.obSlides.length - 1) {
-      showObSlide(obIdx + 1);
-    } else {
-      finishOnboarding();
-    }
+    if (obIdx < el.obSlides.length - 1) showObSlide(obIdx + 1);
+    else finishOnboarding();
   }
   function finishOnboarding() {
     el.onboarding.hidden = true;
     localStorage.setItem('pauma-onboarded', '1');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SERVICE WORKER + UPDATE
+  // ════════════════════════════════════════════════════════════════
+  function setupServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      state.swReg = reg;
+      reg.addEventListener('updatefound', () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener('statechange', () => {
+          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+            el.updateToast.hidden = false;
+          }
+        });
+      });
+    }).catch(() => {});
+
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data?.type === 'sw-activated') {
+        // version refreshed
+      }
+    });
+
+    el.btnUpdate.addEventListener('click', () => {
+      const waiting = state.swReg?.waiting;
+      if (waiting) waiting.postMessage('skipWaiting');
+      setTimeout(() => location.reload(), 300);
+    });
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -956,53 +1203,80 @@
     applyFontSize();
     updateLangLabel();
     setupTabs();
+    setupPTT();
     setupSettings();
+    renderCategories();
     renderQuickPhrases();
+    renderRecentSpoken();
     activateView('listen');
 
-    if (!localStorage.getItem('pauma-onboarded')) {
-      startOnboarding();
-    }
+    // route from manifest shortcuts
+    const params = new URLSearchParams(location.search);
+    if (params.get('start') === 'listen') setTimeout(start, 200);
+    if (params.get('view') === 'speak') activateView('speak');
+    if (params.get('view') === 'sos') openSos();
 
+    if (!localStorage.getItem('pauma-onboarded')) startOnboarding();
+
+    // header
     el.btnLang.addEventListener('click', cycleLang);
+    el.btnSos.addEventListener('click', openSos);
 
+    // speak
     el.btnSpeak.addEventListener('click', () => {
       const t = el.speakText.value.trim();
-      if (t) speak(t);
+      if (t) speak(t, el.btnSpeak);
     });
     el.btnSpeakClear.addEventListener('click', () => { el.speakText.value = ''; });
     el.btnAddPhrase.addEventListener('click', () => {
-      const txt = prompt('Nueva frase rápida:');
+      const txt = prompt('Nueva frase para "' + (PHRASE_CATEGORIES.find(c => c.id === state.activeCategory)?.label || '') + '":');
       if (txt && txt.trim()) {
-        state.phrases.push(txt.trim().slice(0, 200));
-        savePhrases();
+        if (!state.phrases[state.activeCategory]) state.phrases[state.activeCategory] = [];
+        state.phrases[state.activeCategory].push(txt.trim().slice(0, 200));
+        saveJSON('pauma-phrases', state.phrases);
         renderQuickPhrases();
       }
     });
 
+    // history
+    el.histSearch.addEventListener('input', (e) => {
+      state.historySearch = e.target.value;
+      renderHistory();
+    });
     el.btnHistClear.addEventListener('click', async () => {
       if (!confirm('¿Borrar todo el historial? No se puede deshacer.')) return;
-      await dbDeleteAllSessions();
+      await dbDeleteAll();
       renderHistory();
     });
 
+    // rename modal
     el.renameCancel.addEventListener('click', closeRenameSpeaker);
     el.renameSave.addEventListener('click', saveRenameSpeaker);
     el.renameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveRenameSpeaker(); });
 
+    // session sheet
+    el.sheetBack.addEventListener('click', closeSessionSheet);
+    el.sheetTitle.addEventListener('blur', saveSheetTitle);
+    el.sheetTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.sheetTitle.blur(); } });
+    el.sheetShare.addEventListener('click', shareSession);
+    el.sheetDownload.addEventListener('click', downloadSession);
+    el.sheetDelete.addEventListener('click', deleteSession);
+
+    // SOS
+    el.sosClose.addEventListener('click', closeSos);
+    el.sosSpeak.addEventListener('click', sosSpeak);
+    el.sosInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sosSpeak(); }
+    });
+
+    // onboarding
     el.obNext.addEventListener('click', nextOnboarding);
     el.obSkip.addEventListener('click', finishOnboarding);
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
-
+    setupServiceWorker();
     setStatus('Listo · pulsa el micrófono para empezar');
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();

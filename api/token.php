@@ -5,15 +5,18 @@ require_once dirname(__DIR__) . '/src/bootstrap.php';
 
 use Pauma\Config;
 use Pauma\RateLimiter;
+use Pauma\Deepgram;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: same-origin');
 
 $origin = Config::get('ALLOWED_ORIGIN', 'https://maluap.es');
+$allowed = array_map('trim', explode(',', (string) $origin));
 $reqOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($reqOrigin && $reqOrigin === $origin) {
-    header('Access-Control-Allow-Origin: ' . $origin);
+if ($reqOrigin && in_array($reqOrigin, $allowed, true)) {
+    header('Access-Control-Allow-Origin: ' . $reqOrigin);
     header('Access-Control-Allow-Credentials: true');
 }
 
@@ -31,23 +34,46 @@ if (!$rl->check('token:' . RateLimiter::clientIp(), $max)) {
 }
 
 $provider = Config::get('TRANSCRIBE_PROVIDER', 'deepgram');
-$lang = $_GET['lang'] ?? 'es';
-$lang = preg_replace('/[^a-z\-]/i', '', $lang) ?: 'es';
+$lang = preg_replace('/[^a-z\-]/i', '', $_GET['lang'] ?? 'es') ?: 'es';
+$langCode = $lang === 'ca' ? 'ca' : ($lang === 'en' ? 'en' : 'es');
 
 if ($provider === 'deepgram') {
-    $key = Config::get('DEEPGRAM_API_KEY');
-    if (!$key) {
+    $apiKey = Config::get('DEEPGRAM_API_KEY');
+    $projectId = Config::get('DEEPGRAM_PROJECT_ID');
+    $useTemp = Config::get('DEEPGRAM_USE_TEMP_KEYS', '1') === '1';
+
+    if (!$apiKey) {
         http_response_code(503);
         echo json_encode(['error' => 'provider_not_configured', 'provider' => 'deepgram']);
         exit;
     }
+
+    $token = $apiKey;
+    $keyId = null;
+    $expiresAt = null;
+
+    if ($useTemp && $projectId) {
+        try {
+            $dg = new Deepgram($apiKey, $projectId);
+            $temp = $dg->createTempKey(300);
+            $token = $temp['key'];
+            $keyId = $temp['key_id'];
+            $expiresAt = $temp['expires_at'];
+        } catch (\Throwable $e) {
+            error_log('[pauma] deepgram temp key failed: ' . $e->getMessage());
+            // fallback: use root key (less ideal, but at least functional)
+        }
+    }
+
     echo json_encode([
         'provider' => 'deepgram',
-        'token' => $key,
+        'token' => $token,
+        'key_id' => $keyId,
+        'expires_at' => $expiresAt,
         'ws_url' => 'wss://api.deepgram.com/v1/listen',
         'params' => [
             'model' => 'nova-2',
-            'language' => $lang === 'ca' ? 'ca' : ($lang === 'en' ? 'en' : 'es'),
+            'language' => $langCode,
             'diarize' => 'true',
             'punctuate' => 'true',
             'smart_format' => 'true',
@@ -58,37 +84,8 @@ if ($provider === 'deepgram') {
             'encoding' => 'linear16',
             'sample_rate' => '16000',
             'channels' => '1',
+            'endpointing' => '300',
         ],
-    ]);
-    exit;
-}
-
-if ($provider === 'assemblyai') {
-    $key = Config::get('ASSEMBLYAI_API_KEY');
-    if (!$key) {
-        http_response_code(503);
-        echo json_encode(['error' => 'provider_not_configured', 'provider' => 'assemblyai']);
-        exit;
-    }
-    $ch = curl_init('https://streaming.assemblyai.com/v3/token?expires_in_seconds=300');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['Authorization: ' . $key],
-        CURLOPT_TIMEOUT => 8,
-    ]);
-    $res = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($code !== 200 || !$res) {
-        http_response_code(502);
-        echo json_encode(['error' => 'provider_error']);
-        exit;
-    }
-    $data = json_decode($res, true) ?: [];
-    echo json_encode([
-        'provider' => 'assemblyai',
-        'token' => $data['token'] ?? null,
-        'ws_url' => 'wss://streaming.assemblyai.com/v3/ws',
     ]);
     exit;
 }
