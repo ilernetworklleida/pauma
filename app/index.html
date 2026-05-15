@@ -4,54 +4,249 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Pauma · Transcripción en vivo</title>
-  <meta name="description" content="Transcripción en vivo de conversaciones para personas sordas.">
+  <meta name="description" content="Pauma. Transcripción en vivo con identificación de hablantes y tono emocional, para personas sordas.">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="noindex, follow">
   <meta name="format-detection" content="telephone=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="canonical" href="https://maluap.es/app/">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/assets/icons/icon-192.png" type="image/png">
+  <link rel="icon" href="/assets/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body class="app">
+
+  <!-- ───────── ONBOARDING (3 pantallas, solo primera vez) ───────── -->
+  <div class="onboarding" id="onboarding" hidden>
+    <div class="ob-slide" data-slide="0">
+      <div class="ob-art" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <circle cx="60" cy="60" r="58" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.3"/>
+          <circle cx="60" cy="60" r="44" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.5"/>
+          <circle cx="60" cy="60" r="30" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.7"/>
+          <circle cx="60" cy="60" r="16" fill="#a78bfa"/>
+        </svg>
+      </div>
+      <h2>Bienvenida a Pauma</h2>
+      <p>Pauma escucha lo que se dice cerca y lo muestra en pantalla, para que sigas la conversación sin esfuerzo.</p>
+    </div>
+    <div class="ob-slide" data-slide="1" hidden>
+      <div class="ob-art" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <circle cx="36" cy="50" r="14" fill="#a78bfa"/>
+          <circle cx="84" cy="50" r="14" fill="#fbbf24"/>
+          <circle cx="60" cy="86" r="14" fill="#34d399"/>
+        </svg>
+      </div>
+      <h2>Identifica quién habla</h2>
+      <p>Cada persona aparece con su propio color. Puedes ponerles nombre tocando la etiqueta.</p>
+    </div>
+    <div class="ob-slide" data-slide="2" hidden>
+      <div class="ob-art" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="120" height="120" fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round">
+          <path d="M30 40 L30 80"/>
+          <path d="M45 30 L45 90"/>
+          <path d="M60 20 L60 100"/>
+          <path d="M75 30 L75 90"/>
+          <path d="M90 40 L90 80"/>
+        </svg>
+      </div>
+      <h2>Habla tú también</h2>
+      <p>Si prefieres no oralizar, escribe en el modo «Yo hablo» y Pauma lo dirá con una voz natural.</p>
+    </div>
+    <nav class="ob-nav">
+      <div class="ob-dots" id="obDots">
+        <span class="ob-dot active"></span>
+        <span class="ob-dot"></span>
+        <span class="ob-dot"></span>
+      </div>
+      <button class="btn btn-primary" id="obNext" type="button">Siguiente</button>
+      <button class="btn-text-sm" id="obSkip" type="button">Saltar</button>
+    </nav>
+  </div>
+
+  <!-- ───────── HEADER ───────── -->
   <header class="app-header">
-    <a href="/" class="brand" aria-label="Volver a la página principal">
+    <a href="/" class="brand" aria-label="Pauma">
       <span class="brand-dot" id="brand-dot" aria-hidden="true"></span>
       Pauma
     </a>
-    <div class="controls">
-      <select id="lang" aria-label="Idioma de transcripción">
-        <option value="es-ES">Español</option>
-        <option value="ca-ES">Català</option>
-        <option value="en-US">English</option>
-      </select>
+    <div class="app-controls">
+      <button class="icon-btn" id="btnLang" aria-label="Cambiar idioma" title="Idioma">
+        <span id="langLabel">ES</span>
+      </button>
     </div>
   </header>
 
-  <main id="transcript" aria-live="polite" aria-label="Transcripción en vivo">
-    <div class="welcome" id="welcome">
-      <p class="welcome-title">Toca el micrófono para empezar</p>
-      <p class="welcome-sub">Pauma escuchará y mostrará aquí lo que se diga cerca.</p>
-      <p class="welcome-hint">Permite el acceso al micrófono cuando lo pida. La pantalla no se apagará mientras esté activa.</p>
+  <!-- ───────── VIEWS ───────── -->
+
+  <!-- LISTEN (transcripción en vivo) -->
+  <main class="view view-listen" id="viewListen" data-view="listen">
+    <div id="transcript" aria-live="polite" aria-label="Transcripción en vivo">
+      <div class="welcome" id="welcome">
+        <p class="welcome-title">Toca el micrófono para empezar</p>
+        <p class="welcome-sub">Pauma escuchará y mostrará aquí lo que se diga cerca, con un color por persona.</p>
+        <p class="welcome-hint">La pantalla no se apagará mientras esté activa.</p>
+      </div>
     </div>
   </main>
 
-  <footer class="app-footer">
-    <button class="btn-text" id="clear" type="button" aria-label="Limpiar transcripción">Limpiar</button>
-    <button class="mic-btn" id="mic" type="button" aria-label="Empezar a escuchar">
-      <svg class="icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- SPEAK (yo hablo) -->
+  <main class="view view-speak" id="viewSpeak" data-view="speak" hidden>
+    <div class="speak-wrap">
+      <h2 class="view-title">Yo hablo</h2>
+      <textarea id="speakText" placeholder="Escribe aquí lo que quieres decir..." rows="4" maxlength="800" aria-label="Texto a leer en voz alta"></textarea>
+      <div class="speak-actions">
+        <button class="btn btn-primary btn-large" id="btnSpeak" type="button">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          Leer en voz alta
+        </button>
+        <button class="btn-text" id="btnSpeakClear" type="button">Borrar</button>
+      </div>
+      <div class="quick-phrases" aria-label="Frases rápidas">
+        <h3>Frases rápidas</h3>
+        <div class="quick-list" id="quickList"></div>
+        <button class="btn-text-sm" id="btnAddPhrase" type="button">+ Añadir frase</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- HISTORY -->
+  <main class="view view-history" id="viewHistory" data-view="history" hidden>
+    <div class="hist-wrap">
+      <div class="view-head">
+        <h2 class="view-title">Historial</h2>
+        <button class="btn-text-sm" id="btnHistClear" type="button">Borrar todo</button>
+      </div>
+      <div id="historyList" class="hist-list"></div>
+      <div class="hist-empty" id="histEmpty" hidden>
+        <p>Todavía no hay conversaciones guardadas.</p>
+        <p class="muted">Cuando empieces a transcribir, las sesiones se guardarán automáticamente en este dispositivo.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- SETTINGS -->
+  <main class="view view-settings" id="viewSettings" data-view="settings" hidden>
+    <div class="settings-wrap">
+      <h2 class="view-title">Ajustes</h2>
+
+      <section class="setting-group">
+        <h3>Idioma</h3>
+        <div class="radio-row">
+          <label><input type="radio" name="lang" value="es-ES"> Español</label>
+          <label><input type="radio" name="lang" value="ca-ES"> Català</label>
+          <label><input type="radio" name="lang" value="en-US"> English</label>
+        </div>
+      </section>
+
+      <section class="setting-group">
+        <h3>Tamaño del texto</h3>
+        <div class="radio-row">
+          <label><input type="radio" name="fontsize" value="normal"> Normal</label>
+          <label><input type="radio" name="fontsize" value="large"> Grande</label>
+          <label><input type="radio" name="fontsize" value="xl"> Muy grande</label>
+        </div>
+      </section>
+
+      <section class="setting-group">
+        <h3>Mostrar tono emocional</h3>
+        <label class="toggle">
+          <input type="checkbox" id="setEmotion" checked>
+          <span>Etiquetar frases con (alegre), (irritado), etc.</span>
+        </label>
+      </section>
+
+      <section class="setting-group">
+        <h3>Guardar historial</h3>
+        <label class="toggle">
+          <input type="checkbox" id="setHistory" checked>
+          <span>Guardar las conversaciones en este dispositivo</span>
+        </label>
+        <p class="setting-hint">Las conversaciones nunca salen de tu navegador. Puedes borrarlas cuando quieras.</p>
+      </section>
+
+      <section class="setting-group">
+        <h3>Personas</h3>
+        <div id="speakersList" class="speakers-list"></div>
+        <p class="setting-hint">Renombra a quien quieras y Pauma lo recordará en las próximas sesiones.</p>
+      </section>
+
+      <section class="setting-group">
+        <h3>Sobre</h3>
+        <p class="muted">Pauma · v0.2 · <a href="/">Inicio</a> · <a href="/privacidad.html">Privacidad</a></p>
+      </section>
+    </div>
+  </main>
+
+  <!-- ───────── BOTTOM NAV ───────── -->
+  <nav class="tabbar" aria-label="Navegación principal">
+    <button class="tab" data-target="history" type="button" aria-label="Historial">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+        <path d="M3 3v5h5"></path>
+        <path d="M12 7v5l4 2"></path>
+      </svg>
+      <span>Historial</span>
+    </button>
+
+    <button class="tab" data-target="speak" type="button" aria-label="Yo hablo">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span>Yo hablo</span>
+    </button>
+
+    <button class="tab tab-mic" data-target="listen" id="tabMic" type="button" aria-label="Empezar a escuchar">
+      <svg class="icon-mic" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="9" y="2" width="6" height="12" rx="3"></rect>
         <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
         <line x1="12" y1="19" x2="12" y2="22"></line>
         <line x1="8" y1="22" x2="16" y2="22"></line>
       </svg>
-      <svg class="icon-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <svg class="icon-stop" viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true">
         <rect x="6" y="6" width="12" height="12" rx="2"></rect>
       </svg>
     </button>
-    <span class="status" id="status">Listo</span>
-  </footer>
+
+    <button class="tab" data-target="listen-view" type="button" aria-label="Transcripción">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        <line x1="9" y1="10" x2="15" y2="10"></line>
+        <line x1="9" y1="13" x2="13" y2="13"></line>
+      </svg>
+      <span>Transcribir</span>
+    </button>
+
+    <button class="tab" data-target="settings" type="button" aria-label="Ajustes">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
+  <!-- ───────── STATUS LINE ───────── -->
+  <div class="status-line" id="statusLine" aria-live="polite"></div>
+
+  <!-- ───────── MODAL: renombrar hablante ───────── -->
+  <div class="modal" id="modalRename" hidden>
+    <div class="modal-card">
+      <h3>¿Cómo se llama esta persona?</h3>
+      <input type="text" id="renameInput" maxlength="20" placeholder="Mamá, Juan, jefe...">
+      <div class="modal-actions">
+        <button class="btn-text" id="renameCancel" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="renameSave" type="button">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/assets/js/app.js" defer></script>
 </body>

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Pauma · Transcripción en vivo para personas sordas</title>
-  <meta name="description" content="Pauma transcribe en directo lo que se dice cerca. Pensada para personas sordas y sus familias. Gratis, sin instalar y respeta tu privacidad.">
-  <meta name="keywords" content="transcripción en vivo, accesibilidad sordos, subtítulos en directo, lengua de signos, LSE, LSC, sordera, comunicación inclusiva">
+  <meta name="description" content="Pauma transcribe conversaciones en directo, identifica quién habla y te deja responder con voz natural. Pensada para personas sordas. Gratis y respeta tu privacidad.">
+  <meta name="keywords" content="transcripción en vivo, accesibilidad sordos, subtítulos en directo, lengua de signos, LSE, LSC, sordera, comunicación inclusiva, diarización, identificar hablantes">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://maluap.es/">
@@ -65,10 +65,18 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "¿Pauma graba o guarda el audio?",
+            "name": "¿Pauma guarda el audio o la conversación?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Pauma usa el motor de reconocimiento de voz del navegador. El audio no se almacena en ningún servidor y la transcripción solo existe en tu pantalla mientras la app está abierta."
+              "text": "El audio se envía cifrado a Deepgram para transcribirlo y no se almacena. La conversación en texto se puede guardar (opcional) en tu propio dispositivo, nunca en un servidor de Pauma."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Identifica quién habla en una conversación de grupo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Pauma identifica hasta 8 voces y las muestra con colores diferentes. Puedes ponerle nombre a cada persona y Pauma lo recordará."
             }
           },
           {
@@ -128,16 +136,16 @@
 
     <section class="values" aria-label="Por qué Pauma">
       <article>
-        <h3>Conversaciones grupales</h3>
-        <p>En cenas familiares, reuniones o clases. Pauma escucha y muestra el texto en pantalla, para que sigas el hilo sin esfuerzo.</p>
+        <h3>Identifica quién habla</h3>
+        <p>En cenas familiares, reuniones o clases. Cada persona aparece con su color. Pónles nombre una vez y Pauma los recuerda.</p>
       </article>
       <article>
-        <h3>Sin instalar</h3>
-        <p>Funciona en el navegador. Abre maluap.es y empieza. Si quieres, añádela a la pantalla de inicio como una app.</p>
+        <h3>Habla tú también</h3>
+        <p>Si prefieres no oralizar, escribe en el modo «Yo hablo» y Pauma lo dirá con una voz natural. Guarda tus frases más usadas para responder rápido.</p>
       </article>
       <article>
-        <h3>Tu audio se queda contigo</h3>
-        <p>Pauma usa el motor del navegador. No subimos tu voz a servidores ni guardamos lo que se dice. Lo que aparece en tu pantalla, se queda en tu pantalla.</p>
+        <h3>Privada y siempre contigo</h3>
+        <p>Las conversaciones se guardan en tu dispositivo, no en la nube. El historial es solo tuyo, y puedes borrarlo cuando quieras.</p>
       </article>
     </section>
 
@@ -178,7 +186,15 @@
       </details>
       <details>
         <summary>¿Reconoce a varios hablantes?</summary>
-        <p>En esta versión inicial, no. Próximamente Pauma identificará quién habla con colores distintos.</p>
+        <p>Sí. Pauma identifica hasta 8 voces distintas y las pinta con colores diferentes. La primera vez que aparece una persona puedes ponerle nombre tocando su etiqueta, y Pauma lo recordará.</p>
+      </details>
+      <details>
+        <summary>¿Puedo hablar yo a través de Pauma?</summary>
+        <p>Sí. En el modo «Yo hablo» escribes el texto y Pauma lo lee con una voz natural. Puedes guardar tus frases más usadas para responder rápido.</p>
+      </details>
+      <details>
+        <summary>¿Detecta el tono emocional?</summary>
+        <p>En esta versión, marca de forma sencilla frases con tono claro (alegre, irritado, cariñoso, duda). No es perfecto, pero ayuda a entender el contexto emocional. Puedes desactivarlo en Ajustes.</p>
       </details>
       <details>
         <summary>¿Está pensada solo para personas sordas?</summary>

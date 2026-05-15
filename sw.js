@@ -1,10 +1,11 @@
-const CACHE = 'pauma-v0-1-0';
+const CACHE = 'pauma-v0-2-0';
 const SHELL = [
   '/',
   '/app/',
   '/privacidad.html',
   '/assets/css/style.css',
   '/assets/js/app.js',
+  '/assets/icons/icon.svg',
   '/manifest.json',
 ];
 
