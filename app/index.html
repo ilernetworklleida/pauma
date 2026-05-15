@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Pauma · Transcripción en vivo</title>
+  <meta name="description" content="Transcripción en vivo de conversaciones para personas sordas.">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="robots" content="noindex, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://maluap.es/app/">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/assets/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="app">
+  <header class="app-header">
+    <a href="/" class="brand" aria-label="Volver a la página principal">
+      <span class="brand-dot" id="brand-dot" aria-hidden="true"></span>
+      Pauma
+    </a>
+    <div class="controls">
+      <select id="lang" aria-label="Idioma de transcripción">
+        <option value="es-ES">Español</option>
+        <option value="ca-ES">Català</option>
+        <option value="en-US">English</option>
+      </select>
+    </div>
+  </header>
+
+  <main id="transcript" aria-live="polite" aria-label="Transcripción en vivo">
+    <div class="welcome" id="welcome">
+      <p class="welcome-title">Toca el micrófono para empezar</p>
+      <p class="welcome-sub">Pauma escuchará y mostrará aquí lo que se diga cerca.</p>
+      <p class="welcome-hint">Permite el acceso al micrófono cuando lo pida. La pantalla no se apagará mientras esté activa.</p>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <button class="btn-text" id="clear" type="button" aria-label="Limpiar transcripción">Limpiar</button>
+    <button class="mic-btn" id="mic" type="button" aria-label="Empezar a escuchar">
+      <svg class="icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        <line x1="12" y1="19" x2="12" y2="22"></line>
+        <line x1="8" y1="22" x2="16" y2="22"></line>
+      </svg>
+      <svg class="icon-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+      </svg>
+    </button>
+    <span class="status" id="status">Listo</span>
+  </footer>
+
+  <script src="/assets/js/app.js" defer></script>
+</body>
+</html>

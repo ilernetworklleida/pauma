@@ -1,0 +1,42 @@
+{
+  "name": "Pauma · Transcripción en vivo",
+  "short_name": "Pauma",
+  "description": "Transcripción en vivo de conversaciones para personas sordas. Gratis, sin instalar y respeta tu privacidad.",
+  "start_url": "/app/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["accessibility", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Empezar a transcribir",
+      "short_name": "Transcribir",
+      "url": "/app/",
+      "description": "Abre Pauma listo para escuchar"
+    }
+  ]
+}

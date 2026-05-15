@@ -1,0 +1,12 @@
+.env
+.env.*
+node_modules/
+vendor/
+composer.lock
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+backup-*/
+*.tar.gz

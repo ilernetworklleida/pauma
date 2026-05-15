@@ -1,0 +1,17 @@
+{
+  "name": "ilernetworklleida/pauma",
+  "description": "Pauma · asistente IA para personas sordas. Transcripcion en vivo, llamadas asistidas y deteccion de sonidos del entorno.",
+  "type": "project",
+  "license": "proprietary",
+  "homepage": "https://maluap.es",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": { "Pauma\\": "src/" }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
