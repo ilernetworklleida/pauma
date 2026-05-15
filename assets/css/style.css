@@ -1111,6 +1111,87 @@ body.face-to-face #transcript .welcome { transform: rotate(180deg); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
 
+/* ── nombre detectado (te están llamando) ──── */
+.segment.name-match {
+  background: linear-gradient(90deg, rgba(167,139,250,0.18), var(--bg-elev));
+  border-left-color: var(--accent);
+  border-left-width: 6px;
+  position: relative;
+}
+.segment.name-match::after {
+  content: '★'; position: absolute; top: var(--s-2); right: var(--s-3);
+  color: var(--accent); font-size: 14px;
+}
+
+/* ── scroll-top FAB ─────────────────────────── */
+.scroll-top {
+  position: fixed;
+  bottom: calc(var(--tabbar-h) + var(--s-4) + env(safe-area-inset-bottom, 0));
+  right: var(--s-4); z-index: 50;
+  width: 40px; height: 40px; border-radius: var(--r-full);
+  background: var(--bg-elev); border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  display: grid; place-items: center;
+  box-shadow: var(--shadow-md);
+  opacity: 0; pointer-events: none;
+  transform: scale(0.85);
+  transition: opacity var(--d-base) var(--ease), transform var(--d-base) var(--ease-bounce);
+}
+.scroll-top.visible { opacity: 1; pointer-events: auto; transform: scale(1); }
+.scroll-top:hover { color: var(--text); border-color: var(--text-dim); }
+.scroll-top:active { transform: scale(0.92); }
+
+/* ── confirm modal (custom) ─────────────────── */
+.confirm-modal-title { font-size: var(--fs-lg); margin-bottom: var(--s-3); font-weight: 600; }
+.confirm-modal-msg { color: var(--text-dim); margin-bottom: var(--s-5); line-height: var(--lh-base); }
+.confirm-modal-actions { display: flex; gap: var(--s-3); justify-content: flex-end; }
+.btn-danger {
+  background: var(--listening); color: white;
+  border-radius: var(--r-md); padding: var(--s-3) var(--s-5);
+  font-weight: 600; font-size: var(--fs-md);
+  min-height: 48px; min-width: 100px;
+  transition: var(--d-base) var(--ease);
+}
+.btn-danger:hover { background: var(--listening-strong); }
+.btn-danger:active { transform: scale(0.97); }
+
+/* ── kbd hint ───────────────────────────────── */
+kbd {
+  display: inline-block; padding: 1px 6px;
+  font-family: var(--font); font-size: 0.75em; font-weight: 600;
+  background: var(--bg-elev-2); border: 1px solid var(--border-strong);
+  border-bottom-width: 2px; border-radius: 4px;
+  color: var(--text-dim); margin: 0 2px;
+}
+
+/* ── data import/export buttons ─────────────── */
+.data-actions {
+  display: flex; gap: var(--s-2); flex-wrap: wrap;
+  margin-top: var(--s-2);
+}
+.data-actions button {
+  flex: 1; min-height: 44px;
+  font-size: var(--fs-sm);
+}
+
+/* ── name field input ───────────────────────── */
+.text-input {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-md); min-height: 44px;
+  transition: border-color var(--d-base) var(--ease);
+}
+.text-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ── copy feedback en segmento ──────────────── */
+.segment.copied {
+  animation: segCopied 0.6s var(--ease) forwards;
+}
+@keyframes segCopied {
+  0% { background: var(--accent-soft); }
+  100% { background: var(--bg-elev); }
+}
+
 /* ── spinner pequeño ────────────────────────── */
 .spinner {
   display: inline-block; width: 14px; height: 14px;

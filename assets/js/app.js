@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.5';
+  const VERSION = 'v0.6';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -85,6 +85,8 @@
     keepAliveTimer: null,
     currentKeyId: null,
     faceToFace: localStorage.getItem('pauma-f2f') === '1',
+    myName: localStorage.getItem('pauma-my-name') || '',
+    ttsPlaying: false,
 
     speakers: loadJSON('pauma-speakers', {}),
     currentSession: null,
@@ -163,6 +165,17 @@
     tipMic: $('#tipMic'),
     btnF2F: $('#btnF2F'),
     appHeader: document.querySelector('.app-header'),
+
+    setMyName: $('#setMyName'),
+    btnExportAll: $('#btnExportAll'),
+    btnImportAll: $('#btnImportAll'),
+    importFile: $('#importFile'),
+    scrollTop: $('#scrollTop'),
+    confirmModal: $('#confirmModal'),
+    confirmTitle: $('#confirmTitle'),
+    confirmMsg: $('#confirmMsg'),
+    confirmOk: $('#confirmOk'),
+    confirmCancel: $('#confirmCancel'),
 
     speakersList: $('#speakersList'),
     setEmotion: $('#setEmotion'),
@@ -351,6 +364,32 @@
     return null;
   }
 
+  function detectName(text) {
+    if (!state.myName || !text) return null;
+    const names = state.myName.split(',').map(s => s.trim()).filter(Boolean);
+    const t = ' ' + text.toLowerCase() + ' ';
+    for (const name of names) {
+      const re = new RegExp('(?:^|[^a-záéíóúüñ])' + escapeRegexLocal(name.toLowerCase()) + '(?:[^a-záéíóúüñ]|$)');
+      if (re.test(t)) return name;
+    }
+    return null;
+  }
+  function escapeRegexLocal(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  async function copySegmentText(segEl) {
+    const txt = segEl.querySelector('.segment-text')?.textContent?.trim();
+    if (!txt) return;
+    try {
+      await navigator.clipboard.writeText(txt);
+      segEl.classList.add('copied');
+      setTimeout(() => segEl.classList.remove('copied'), 600);
+      feedbackToast('Copiado al portapapeles', 'ok');
+      vibrate(15);
+    } catch {
+      feedbackToast('No se pudo copiar', 'err');
+    }
+  }
+
   // ════════════════════════════════════════════════════════════════
   // TRANSCRIBE (Deepgram + fallback Web Speech)
   // ════════════════════════════════════════════════════════════════
@@ -401,6 +440,7 @@
           state.audioProcessor = processor;
           processor.onaudioprocess = (e) => {
             if (ws.readyState !== 1) return;
+            if (state.ttsPlaying) return; // anti feedback loop con TTS local
             ws.send(floatTo16BitPCM(e.inputBuffer.getChannelData(0)));
           };
           source.connect(processor);
@@ -722,6 +762,7 @@
     if (!text) return;
     renderInterim('', null);
     const emotion = detectEmotion(text);
+    const nameMatch = detectName(text);
     const time = nowHM();
     const speaker = speakerIdx != null ? Number(speakerIdx) : null;
 
@@ -747,9 +788,18 @@
         }
       } else {
         const div = document.createElement('div');
-        div.className = 'segment';
+        div.className = 'segment' + (nameMatch ? ' name-match' : '');
         if (speaker != null) div.dataset.speaker = (speaker % PALETTE_LEN);
         div._t = Date.now();
+        div.addEventListener('click', (e) => {
+          // si han clicado el speaker name (rename), no copiar
+          if (e.target.closest('.segment-speaker')) return;
+          copySegmentText(div);
+        });
+        if (nameMatch) {
+          vibrate([60, 50, 100, 50, 60]);
+          feedbackToast('Te están llamando: "' + nameMatch + '"', 'ok');
+        }
 
         const meta = document.createElement('div');
         meta.className = 'segment-meta';
@@ -836,8 +886,9 @@
       if (res.ok) {
         const blob = await res.blob();
         const audio = new Audio(URL.createObjectURL(blob));
-        audio.onended = () => setStatus('');
-        audio.onerror = () => fallbackTts(text);
+        state.ttsPlaying = true;
+        audio.onended = () => { state.ttsPlaying = false; setStatus(''); };
+        audio.onerror = () => { state.ttsPlaying = false; fallbackTts(text); };
         await audio.play();
         setStatus('Hablando…', 'ok');
       } else {
@@ -858,7 +909,10 @@
     }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = state.lang; u.rate = 1.0; u.pitch = 1.0;
-    u.onend = () => setStatus('');
+    state.ttsPlaying = true;
+    u.onstart = () => { state.ttsPlaying = true; };
+    u.onend = () => { state.ttsPlaying = false; setStatus(''); };
+    u.onerror = () => { state.ttsPlaying = false; };
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
     setStatus('Hablando…', 'ok');
@@ -1108,10 +1162,17 @@
   }
   async function deleteSession() {
     if (!state.activeSessionDetailId) return;
-    if (!confirm('¿Borrar esta conversación? No se puede deshacer.')) return;
-    await dbDeleteSession(state.activeSessionDetailId);
-    closeSessionSheet();
-    renderHistory();
+    askConfirm({
+      title: '¿Borrar esta conversación?',
+      message: 'No se puede deshacer.',
+      confirmLabel: 'Borrar',
+      onConfirm: async () => {
+        await dbDeleteSession(state.activeSessionDetailId);
+        closeSessionSheet();
+        renderHistory();
+        feedbackToast('Conversación borrada', 'ok');
+      },
+    });
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1213,6 +1274,16 @@
       state.pushToTalk = el.setPTT.checked;
       localStorage.setItem('pauma-ptt', state.pushToTalk ? '1' : '0');
     });
+
+    el.setMyName.value = state.myName;
+    el.setMyName.addEventListener('change', () => {
+      state.myName = el.setMyName.value.trim();
+      localStorage.setItem('pauma-my-name', state.myName);
+    });
+
+    el.btnExportAll.addEventListener('click', exportAllData);
+    el.btnImportAll.addEventListener('click', importAllData);
+    el.importFile.addEventListener('change', handleImportFile);
   }
   function applyFontSize() {
     document.body.classList.remove('fs-large', 'fs-xl');
@@ -1371,10 +1442,17 @@
       el.histSearch.focus();
       renderHistory();
     });
-    el.btnHistClear.addEventListener('click', async () => {
-      if (!confirm('¿Borrar todo el historial? No se puede deshacer.')) return;
-      await dbDeleteAll();
-      renderHistory();
+    el.btnHistClear.addEventListener('click', () => {
+      askConfirm({
+        title: '¿Borrar todo el historial?',
+        message: 'Se borrarán todas las conversaciones guardadas en este dispositivo. No se puede deshacer.',
+        confirmLabel: 'Sí, borrar todo',
+        onConfirm: async () => {
+          await dbDeleteAll();
+          renderHistory();
+          feedbackToast('Historial borrado', 'ok');
+        },
+      });
     });
 
     // rename modal
@@ -1403,6 +1481,7 @@
 
     setupServiceWorker();
     setupInstallPrompt();
+    setupConfirm();
     setStatus('Listo · pulsa el micrófono para empezar');
   }
 
@@ -1425,13 +1504,112 @@
   }
 
   // ════════════════════════════════════════════════════════════════
+  // MODAL DE CONFIRMACION GENERICO
+  // ════════════════════════════════════════════════════════════════
+  let confirmCb = null;
+  function askConfirm({ title, message, confirmLabel, onConfirm }) {
+    confirmCb = onConfirm;
+    el.confirmTitle.textContent = title || '¿Estás seguro?';
+    el.confirmMsg.textContent = message || '';
+    el.confirmOk.textContent = confirmLabel || 'Sí, hazlo';
+    el.confirmModal.hidden = false;
+  }
+  function closeConfirm() {
+    el.confirmModal.hidden = true;
+    confirmCb = null;
+  }
+  function setupConfirm() {
+    el.confirmOk.addEventListener('click', () => {
+      const cb = confirmCb;
+      closeConfirm();
+      if (cb) cb();
+    });
+    el.confirmCancel.addEventListener('click', closeConfirm);
+    el.confirmModal.addEventListener('click', (e) => {
+      if (e.target === el.confirmModal) closeConfirm();
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // BACKUP / RESTORE
+  // ════════════════════════════════════════════════════════════════
+  async function exportAllData() {
+    const data = {
+      version: VERSION,
+      exportedAt: new Date().toISOString(),
+      localStorage: Object.fromEntries(
+        Object.keys(localStorage)
+          .filter(k => k.startsWith('pauma-'))
+          .map(k => [k, localStorage.getItem(k)])
+      ),
+      sessions: [],
+    };
+    try { data.sessions = await dbGetSessions(); } catch (_) {}
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `pauma-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    feedbackToast('Backup descargado', 'ok');
+  }
+
+  function importAllData() {
+    el.importFile.click();
+  }
+
+  async function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data || typeof data !== 'object') throw new Error('formato');
+
+      askConfirm({
+        title: '¿Restaurar este backup?',
+        message: 'Se reemplazarán todas las conversaciones, personas, frases y ajustes actuales con los del archivo.',
+        confirmLabel: 'Sí, restaurar',
+        onConfirm: async () => {
+          // localStorage
+          if (data.localStorage && typeof data.localStorage === 'object') {
+            Object.keys(localStorage).filter(k => k.startsWith('pauma-')).forEach(k => localStorage.removeItem(k));
+            for (const [k, v] of Object.entries(data.localStorage)) {
+              if (typeof v === 'string') localStorage.setItem(k, v);
+            }
+          }
+          // sessions
+          if (Array.isArray(data.sessions)) {
+            await dbDeleteAll();
+            for (const s of data.sessions) {
+              try { await dbPutSession(s); } catch (_) {}
+            }
+          }
+          feedbackToast('Restaurado · recargando...', 'ok');
+          setTimeout(() => location.reload(), 800);
+        },
+      });
+    } catch (err) {
+      feedbackToast('Archivo no válido', 'err');
+    } finally {
+      el.importFile.value = '';
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
   // HEADER SHADOW al scroll + TIP MIC primera vez
   // ════════════════════════════════════════════════════════════════
   function setupHeaderScroll() {
     el.views.forEach(v => {
       v.addEventListener('scroll', () => {
         el.appHeader.classList.toggle('scrolled', v.scrollTop > 4);
+        el.scrollTop.classList.toggle('visible', v.scrollTop > 240);
       }, { passive: true });
+    });
+    el.scrollTop.addEventListener('click', () => {
+      const active = document.querySelector('.view:not([hidden])');
+      if (active) active.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 

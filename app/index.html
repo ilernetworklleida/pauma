@@ -147,6 +147,26 @@
   <!-- tip pulsante sobre el FAB (primera visita) -->
   <div class="tip-mic" id="tipMic" hidden aria-hidden="true">Toca para empezar</div>
 
+  <!-- scroll-top FAB -->
+  <button class="scroll-top" id="scrollTop" type="button" aria-label="Volver arriba">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="5"></line>
+      <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  </button>
+
+  <!-- modal de confirmacion generico -->
+  <div class="modal" id="confirmModal" hidden role="dialog">
+    <div class="modal-card">
+      <h3 class="confirm-modal-title" id="confirmTitle">¿Estás seguro?</h3>
+      <p class="confirm-modal-msg" id="confirmMsg"></p>
+      <div class="confirm-modal-actions">
+        <button class="btn-text" id="confirmCancel" type="button">Cancelar</button>
+        <button class="btn-danger" id="confirmOk" type="button">Sí, hazlo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════ VIEWS ═══════════ -->
 
   <!-- LISTEN -->
@@ -315,6 +335,32 @@
       <section class="setting-group">
         <div class="setting-group-head">
           <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </span>
+          <h3>Te llaman por tu nombre</h3>
+        </div>
+        <input type="text" class="text-input" id="setMyName" maxlength="40" placeholder="Ej. María, hermana, mamá...">
+        <p class="setting-hint">Cuando alguien diga esta palabra, Pauma vibrará y la resaltará. Puedes poner varios separados por coma.</p>
+      </section>
+
+      <section class="setting-group">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          <h3>Mis datos</h3>
+        </div>
+        <div class="data-actions">
+          <button class="btn-text" id="btnExportAll" type="button">Exportar todo</button>
+          <button class="btn-text" id="btnImportAll" type="button">Importar...</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" hidden>
+        <p class="setting-hint">Backup completo en un archivo JSON (sesiones, personas, frases, ajustes). Útil si cambias de móvil.</p>
+      </section>
+
+      <section class="setting-group">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></svg>
           </span>
           <h3>Estadísticas</h3>
@@ -330,7 +376,7 @@
           </span>
           <h3>Sobre Pauma</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.5 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.6 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
