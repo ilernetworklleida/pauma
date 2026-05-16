@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.7';
+  const VERSION = 'v0.8';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -490,6 +490,13 @@
     let data;
     try { data = JSON.parse(raw); } catch { return; }
 
+    // FIX: manejar mensajes de error de Deepgram
+    if (data.type === 'Error' || data.error) {
+      console.warn('[deepgram error]', data);
+      setStatus('Error del servicio · reintentando…', 'warn');
+      return;
+    }
+
     if (data.type === 'Results' && data.channel?.alternatives?.[0]) {
       const alt = data.channel.alternatives[0];
       const isFinal = !!data.is_final;
@@ -556,7 +563,6 @@
     state.currentSession = newSession();
     await requestWakeLock();
     vibrate([30, 20, 30]);
-    showTranscribeNotice();
 
     const cfg = await getProviderConfig();
     if (cfg?.provider === 'deepgram' && cfg.token) {
@@ -566,8 +572,12 @@
         setStatus('Escuchando · alta calidad · identifica hablantes', 'ok');
         setQuality('high', 'Alta calidad · diarización activa');
         showQuickActions();
+        showTranscribeNotice();
         return;
-      } catch (err) { console.warn('Deepgram failed, fallback', err); }
+      } catch (err) {
+        console.warn('Deepgram failed, fallback', err);
+        cleanupAudio(); // FIX: limpiar audio context si fallo deepgram antes de fallback
+      }
     }
     if (SR) {
       try {
@@ -576,12 +586,44 @@
         setStatus('Escuchando · modo básico (sin diarización)', 'warn');
         setQuality('basic', 'Modo básico · sin identificar hablantes');
         showQuickActions();
+        showTranscribeNotice();
         return;
-      } catch { await stop(); setStatus('No se pudo iniciar', 'error'); return; }
+      } catch (err) {
+        await stopInternal();
+        setStatus('No se pudo iniciar (¿permiso de micrófono?)', 'error');
+        feedbackToast('No se pudo activar el micrófono', 'err');
+        return;
+      }
     }
     setStatus('Tu navegador no es compatible. Usa Chrome o Edge.', 'error');
     setQuality('error', 'No disponible');
-    await stop();
+    await stopInternal();
+    feedbackToast('Navegador no compatible', 'err');
+  }
+
+  // versión sin vibrate ni "En pausa" para usar en errores de start()
+  async function stopInternal() {
+    state.listening = false;
+    clearInterval(state.keepAliveTimer); state.keepAliveTimer = null;
+    el.brandDot.classList.remove('listening');
+    el.tabMic.classList.remove('listening');
+    el.tabMic.classList.remove('ptt');
+    el.tabMic.setAttribute('aria-label', 'Empezar a escuchar');
+    if (state.ws) {
+      try { state.ws.close(); } catch (_) {}
+      state.ws = null;
+    }
+    if (state.webSpeech) {
+      try { state.webSpeech.stop(); } catch (_) {}
+      state.webSpeech = null;
+    }
+    stopAudioViz();
+    hideQuickActions();
+    setQuality('');
+    cleanupAudio();
+    releaseWakeLock();
+    renderInterim('', null);
+    state.currentSession = null;
   }
 
   async function stop() {
@@ -922,14 +964,21 @@
   }
   function fallbackTts(text) {
     if (!('speechSynthesis' in window)) {
-      setStatus('Tu navegador no permite leer en voz alta', 'error'); return;
+      state.ttsPlaying = false; // FIX: liberar flag
+      setStatus('Tu navegador no permite leer en voz alta', 'error');
+      return;
     }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = state.lang; u.rate = 1.0; u.pitch = 1.0;
     state.ttsPlaying = true;
     u.onstart = () => { state.ttsPlaying = true; };
     u.onend = () => { state.ttsPlaying = false; setStatus(''); };
-    u.onerror = () => { state.ttsPlaying = false; };
+    // FIX: liberar flag siempre, incluso con error
+    u.onerror = () => {
+      state.ttsPlaying = false;
+      setStatus('Error al leer en voz', 'warn');
+      setTimeout(() => setStatus(''), 2000);
+    };
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
     setStatus('Hablando…', 'ok');
@@ -1129,15 +1178,21 @@
     }
     el.sheet.hidden = false;
   }
-  function closeSessionSheet() { el.sheet.hidden = true; state.activeSessionDetailId = null; }
+  function closeSessionSheet() {
+    el.sheet.hidden = true;
+    state.activeSessionDetailId = null;
+    if (state.view === 'history') renderHistory(); // FIX: refrescar lista por si cambio el titulo
+  }
 
   async function saveSheetTitle() {
     if (!state.activeSessionDetailId) return;
     const title = el.sheetTitle.textContent.trim().slice(0, 80);
     const s = await dbGetSession(state.activeSessionDetailId);
     if (!s) return;
+    if (s.title === title) return; // FIX: no escribir si no cambio
     s.title = title;
     await dbPutSession(s);
+    feedbackToast('Título guardado', 'ok');
   }
 
   function sessionToText(session) {
@@ -1218,7 +1273,25 @@
       edit.className = 'speaker-edit'; edit.type = 'button';
       edit.textContent = 'Cambiar';
       edit.addEventListener('click', () => openRenameSpeaker(Number(idx)));
-      row.appendChild(swatch); row.appendChild(name); row.appendChild(edit);
+      // FIX: añadir boton borrar
+      const del = document.createElement('button');
+      del.className = 'speaker-edit'; del.type = 'button';
+      del.textContent = 'Borrar';
+      del.style.color = 'var(--listening)';
+      del.addEventListener('click', () => {
+        askConfirm({
+          title: '¿Borrar esta persona?',
+          message: `Pauma olvidará a "${speakerLabel(idx)}". La volverá a detectar si vuelve a hablar.`,
+          confirmLabel: 'Borrar',
+          onConfirm: () => {
+            delete state.speakers[idx];
+            saveJSON('pauma-speakers', state.speakers);
+            renderSpeakersSettings();
+            feedbackToast('Persona borrada', 'ok');
+          },
+        });
+      });
+      row.appendChild(swatch); row.appendChild(name); row.appendChild(edit); row.appendChild(del);
       el.speakersList.appendChild(row);
     });
   }
@@ -1300,8 +1373,17 @@
 
     el.setKeywords.value = state.keywords;
     el.setKeywords.addEventListener('change', () => {
-      state.keywords = el.setKeywords.value.trim();
+      // FIX: sanitizar keywords antes de guardar
+      const clean = el.setKeywords.value
+        .split(/[\n,]/)
+        .map(s => s.trim().replace(/[^\wáéíóúüñÁÉÍÓÚÜÑ '·\-]/g, '').slice(0, 60))
+        .filter(s => s.length > 0)
+        .slice(0, 30)
+        .join('\n');
+      state.keywords = clean;
+      el.setKeywords.value = clean;
       localStorage.setItem('pauma-keywords', state.keywords);
+      feedbackToast(clean ? 'Vocabulario guardado' : 'Vocabulario vacío', 'ok');
     });
 
     el.setShowNotice.checked = state.showNotice;
@@ -1461,6 +1543,8 @@
     });
 
     // history
+    // FIX: visibility correcta del clear al cargar (por si hay valor previo)
+    el.searchClear.hidden = !el.histSearch.value;
     el.histSearch.addEventListener('input', (e) => {
       state.historySearch = e.target.value;
       el.searchClear.hidden = !e.target.value;
@@ -1502,8 +1586,12 @@
     // SOS
     el.sosClose.addEventListener('click', closeSos);
     el.sosSpeak.addEventListener('click', sosSpeak);
+    // FIX: Enter solo = nueva linea; Ctrl/Cmd/Shift+Enter = leer
     el.sosInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sosSpeak(); }
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey || e.shiftKey)) {
+        e.preventDefault();
+        sosSpeak();
+      }
     });
 
     // onboarding
@@ -1655,9 +1743,9 @@
 
   function setupTipMic() {
     if (localStorage.getItem('pauma-first-listen') === '1') return;
-    // primera visita: mostrar tip a los 4s si no ha pulsado el mic
+    // FIX: no mostrar tip si la pagina esta en segundo plano
     setTimeout(() => {
-      if (!state.listening && state.view === 'listen') {
+      if (!state.listening && state.view === 'listen' && document.visibilityState === 'visible') {
         el.tipMic.hidden = false;
         setTimeout(() => { el.tipMic.hidden = true; }, 6000);
       }
@@ -1673,7 +1761,10 @@
   // ════════════════════════════════════════════════════════════════
   function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-      const inEditable = e.target.matches('input, textarea, [contenteditable]');
+      const inEditable = e.target.matches('input, textarea, [contenteditable], select');
+      const inButton = e.target.tagName === 'BUTTON';
+      // SPACE en boton: dejar comportamiento nativo (activar el boton)
+      if (inButton && (e.key === ' ' || e.key === 'Enter')) return;
       if (inEditable) {
         // ESC en input limpia/cierra
         if (e.key === 'Escape') {
