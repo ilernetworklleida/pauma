@@ -1,0 +1,56 @@
+name: Deploy a Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar archivos críticos
+        run: |
+          test -f index.html
+          test -f app/index.html
+          test -f assets/css/style.css
+          test -f assets/js/app.js
+          test -f manifest.json
+          test -f sw.js
+          test -f .htaccess
+          echo "✓ archivos críticos presentes"
+
+      - name: Desplegar por rsync via SSH
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_PORT }}
+          TARGET: ${{ secrets.HOSTINGER_PATH }}
+          ARGS: >-
+            -avzr --delete
+            --exclude='.git/'
+            --exclude='.github/'
+            --exclude='.gitignore'
+            --exclude='.env'
+            --exclude='.env.*'
+            --exclude='!.env.example'
+            --exclude='node_modules/'
+            --exclude='*.md'
+            --exclude='deploy.sh'
+            --exclude='.vscode/'
+            --exclude='.idea/'
+            --exclude='backup-*'
+            --exclude='migrations/'
+            --exclude='tests/'
+
+      - name: Verificar despliegue
+        run: |
+          curl -sf https://maluap.es/ -o /dev/null && echo "✓ landing OK" || (echo "✗ landing falló" && exit 1)
+          curl -sf https://maluap.es/app/ -o /dev/null && echo "✓ app OK" || (echo "✗ app falló" && exit 1)
+          curl -sf https://maluap.es/api/health.php -o /dev/null && echo "✓ health OK" || (echo "✗ health falló" && exit 1)

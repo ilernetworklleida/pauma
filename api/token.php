@@ -65,27 +65,40 @@ if ($provider === 'deepgram') {
         }
     }
 
+    $params = [
+        'model' => 'nova-2',
+        'language' => $langCode,
+        'diarize' => 'true',
+        'punctuate' => 'true',
+        'smart_format' => 'true',
+        'interim_results' => 'true',
+        'utterances' => 'true',
+        'utterance_end_ms' => '1000',
+        'vad_events' => 'true',
+        'encoding' => 'linear16',
+        'sample_rate' => '16000',
+        'channels' => '1',
+        'endpointing' => '300',
+    ];
+
+    // Palabras clave personalizadas del usuario (vocabulario personal)
+    $keywords = $_GET['keyword'] ?? [];
+    if (is_string($keywords)) $keywords = [$keywords];
+    $kwClean = [];
+    foreach (array_slice((array)$keywords, 0, 30) as $kw) {
+        $kw = trim((string) $kw);
+        if ($kw === '' || strlen($kw) > 60) continue;
+        $kwClean[] = $kw . ':2'; // intensifier 2 = mas peso
+    }
+
     echo json_encode([
         'provider' => 'deepgram',
         'token' => $token,
         'key_id' => $keyId,
         'expires_at' => $expiresAt,
         'ws_url' => 'wss://api.deepgram.com/v1/listen',
-        'params' => [
-            'model' => 'nova-2',
-            'language' => $langCode,
-            'diarize' => 'true',
-            'punctuate' => 'true',
-            'smart_format' => 'true',
-            'interim_results' => 'true',
-            'utterances' => 'true',
-            'utterance_end_ms' => '1000',
-            'vad_events' => 'true',
-            'encoding' => 'linear16',
-            'sample_rate' => '16000',
-            'channels' => '1',
-            'endpointing' => '300',
-        ],
+        'params' => $params,
+        'keywords' => $kwClean,
     ]);
     exit;
 }

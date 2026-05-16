@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.6';
+  const VERSION = 'v0.7';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -86,6 +86,8 @@
     currentKeyId: null,
     faceToFace: localStorage.getItem('pauma-f2f') === '1',
     myName: localStorage.getItem('pauma-my-name') || '',
+    keywords: localStorage.getItem('pauma-keywords') || '',
+    showNotice: localStorage.getItem('pauma-show-notice') !== '0',
     ttsPlaying: false,
 
     speakers: loadJSON('pauma-speakers', {}),
@@ -167,6 +169,10 @@
     appHeader: document.querySelector('.app-header'),
 
     setMyName: $('#setMyName'),
+    setKeywords: $('#setKeywords'),
+    setShowNotice: $('#setShowNotice'),
+    noticeBanner: $('#noticeBanner'),
+    noticeClose: $('#noticeClose'),
     btnExportAll: $('#btnExportAll'),
     btnImportAll: $('#btnImportAll'),
     importFile: $('#importFile'),
@@ -395,8 +401,15 @@
   // ════════════════════════════════════════════════════════════════
   async function getProviderConfig() {
     const lang = state.lang.startsWith('ca') ? 'ca' : state.lang.startsWith('en') ? 'en' : 'es';
+    const kws = state.keywords
+      .split(/[\n,]/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .slice(0, 30);
+    const qs = new URLSearchParams({ lang });
+    for (const k of kws) qs.append('keyword', k);
     try {
-      const res = await fetch('/api/token.php?lang=' + lang, { credentials: 'same-origin' });
+      const res = await fetch('/api/token.php?' + qs.toString(), { credentials: 'same-origin' });
       if (!res.ok) return null;
       const data = await res.json();
       if (data.error) return null;
@@ -415,6 +428,9 @@
 
   async function startDeepgram(cfg) {
     const params = new URLSearchParams(cfg.params);
+    if (Array.isArray(cfg.keywords)) {
+      for (const kw of cfg.keywords) params.append('keywords', kw);
+    }
     const url = cfg.ws_url + '?' + params.toString();
     const ws = new WebSocket(url, ['token', cfg.token]);
     state.ws = ws;
@@ -540,6 +556,7 @@
     state.currentSession = newSession();
     await requestWakeLock();
     vibrate([30, 20, 30]);
+    showTranscribeNotice();
 
     const cfg = await getProviderConfig();
     if (cfg?.provider === 'deepgram' && cfg.token) {
@@ -1281,6 +1298,20 @@
       localStorage.setItem('pauma-my-name', state.myName);
     });
 
+    el.setKeywords.value = state.keywords;
+    el.setKeywords.addEventListener('change', () => {
+      state.keywords = el.setKeywords.value.trim();
+      localStorage.setItem('pauma-keywords', state.keywords);
+    });
+
+    el.setShowNotice.checked = state.showNotice;
+    el.setShowNotice.addEventListener('change', () => {
+      state.showNotice = el.setShowNotice.checked;
+      localStorage.setItem('pauma-show-notice', state.showNotice ? '1' : '0');
+    });
+
+    el.noticeClose.addEventListener('click', () => { el.noticeBanner.hidden = true; });
+
     el.btnExportAll.addEventListener('click', exportAllData);
     el.btnImportAll.addEventListener('click', importAllData);
     el.importFile.addEventListener('change', handleImportFile);
@@ -1501,6 +1532,15 @@
   }
   function setupF2F() {
     el.btnF2F.addEventListener('click', toggleFaceToFace);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // NOTICE BANNER (aviso transcripcion)
+  // ════════════════════════════════════════════════════════════════
+  function showTranscribeNotice() {
+    if (!state.showNotice) return;
+    el.noticeBanner.hidden = false;
+    setTimeout(() => { el.noticeBanner.hidden = true; }, 5000);
   }
 
   // ════════════════════════════════════════════════════════════════

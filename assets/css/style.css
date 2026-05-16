@@ -1111,6 +1111,28 @@ body.face-to-face #transcript .welcome { transform: rotate(180deg); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
 
+/* ── notice banner (consentimiento transcripcion) ─ */
+.notice-banner {
+  position: fixed;
+  top: calc(var(--header-h) + env(safe-area-inset-top, 0) + var(--s-2));
+  left: var(--s-3); right: var(--s-3); z-index: 110;
+  display: flex; align-items: center; gap: var(--s-2);
+  background: var(--bg-elev); border: 1px solid var(--accent);
+  border-radius: var(--r-md); padding: var(--s-2) var(--s-3);
+  font-size: var(--fs-sm); color: var(--text-dim);
+  box-shadow: var(--shadow-md);
+  animation: slideUpToast 0.25s var(--ease-out);
+  max-width: 600px; margin: 0 auto;
+}
+.notice-banner svg { color: var(--accent); flex-shrink: 0; }
+.notice-banner span { flex: 1; line-height: var(--lh-snug); }
+.notice-close {
+  color: var(--text-faint); font-size: var(--fs-lg); line-height: 1;
+  width: 28px; height: 28px; border-radius: var(--r-full);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.notice-close:hover { color: var(--text); background: var(--bg-elev-3); }
+
 /* ── nombre detectado (te están llamando) ──── */
 .segment.name-match {
   background: linear-gradient(90deg, rgba(167,139,250,0.18), var(--bg-elev));

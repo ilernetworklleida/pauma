@@ -25,6 +25,17 @@
     <button class="btn-text-sm" id="btnUpdate" type="button">Actualizar</button>
   </div>
 
+  <!-- ───────── AVISO TRANSCRIPCIÓN (consentimiento) ───────── -->
+  <div class="notice-banner" id="noticeBanner" hidden role="status">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>Pauma está transcribiendo. El audio se procesa y se descarta.</span>
+    <button class="notice-close" id="noticeClose" type="button" aria-label="Ocultar aviso">×</button>
+  </div>
+
   <!-- ───────── INSTALL BANNER ───────── -->
   <div class="install-banner" id="installBanner" hidden role="dialog" aria-label="Instalar app">
     <div class="install-banner-icon" aria-hidden="true">
@@ -53,8 +64,8 @@
           <line x1="36" y1="84" x2="64" y2="84"/>
         </svg>
       </div>
-      <h2>Bienvenida a Pauma</h2>
-      <p>Pauma escucha lo que se dice cerca y lo muestra en pantalla, para que sigas la conversación sin esfuerzo.</p>
+      <h2>Te damos la bienvenida a Pauma</h2>
+      <p>Pauma trae a tu pantalla lo que se dice cerca, para que sigas la conversación sin esfuerzo.</p>
     </div>
     <div class="ob-slide" data-slide="1" hidden>
       <div class="ob-art" aria-hidden="true">
@@ -182,7 +193,7 @@
           </svg>
         </div>
         <p class="welcome-title">Toca el micrófono para empezar</p>
-        <p class="welcome-sub">Pauma escuchará y mostrará aquí lo que se diga cerca, con un color por persona.</p>
+        <p class="welcome-sub">Pauma traerá a tu pantalla lo que se diga cerca, con un color por persona.</p>
         <p class="welcome-hint">La pantalla no se apagará mientras esté activa.</p>
       </div>
     </div>
@@ -346,6 +357,32 @@
       <section class="setting-group">
         <div class="setting-group-head">
           <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          </span>
+          <h3>Palabras importantes</h3>
+        </div>
+        <textarea class="text-input" id="setKeywords" rows="3" maxlength="500" placeholder="Una palabra o expresión por línea. Ej. nombres de familia, motes, jergas..."></textarea>
+        <p class="setting-hint">Palabras o expresiones que Pauma debería reconocer mejor. Útil para motes familiares, nombres propios, jerga del trabajo, palabras médicas...</p>
+      </section>
+
+      <section class="setting-group">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </span>
+          <h3>Aviso de transcripción</h3>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setShowNotice" checked>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Mostrar aviso "Pauma está transcribiendo" al empezar a escuchar.</span>
+        </label>
+        <p class="setting-hint">Por respeto a la persona con la que hablas, Pauma muestra brevemente que está transcribiendo. Puedes desactivarlo si te incomoda.</p>
+      </section>
+
+      <section class="setting-group">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </span>
           <h3>Mis datos</h3>
@@ -376,7 +413,7 @@
           </span>
           <h3>Sobre Pauma</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.6 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.7 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
@@ -386,7 +423,7 @@
   <main class="view view-sos" id="viewSos" data-view="sos" hidden>
     <div class="sos-wrap">
       <div class="sos-header">
-        <h2>Soy sorda.<br>Comuniquémonos aquí.</h2>
+        <h2>Soy persona sorda.<br>Comuniquémonos aquí.</h2>
         <button class="btn-text" id="btnSosClose" type="button" aria-label="Cerrar modo SOS">Cerrar</button>
       </div>
       <div class="sos-split">

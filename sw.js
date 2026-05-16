@@ -1,4 +1,4 @@
-const CACHE = 'pauma-v0-6-0';
+const CACHE = 'pauma-v0-7-0';
 const SHELL = [
   '/',
   '/app/',

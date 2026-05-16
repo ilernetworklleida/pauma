@@ -1,0 +1,39 @@
+                    GNU AFFERO GENERAL PUBLIC LICENSE
+                       Version 3, 19 November 2007
+
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies of this
+ license document, but changing it is not allowed.
+
+
+Pauma · Herramienta de comunicación accesible para personas sordas
+Copyright (C) 2026 Alvaro Garray Molina y colaboradores
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public
+License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+La AGPL-3.0 es una licencia copyleft fuerte que requiere que cualquier
+modificación distribuida (incluyendo uso como servicio en red) se libere
+también bajo AGPL-3.0. Esto protege que Pauma siga siendo gratis, abierta
+y propiedad de la comunidad, no de empresas que la encierren.
+
+
+El texto completo de la licencia GNU Affero General Public License v3.0
+está disponible en:
+
+    https://www.gnu.org/licenses/agpl-3.0.txt
+    https://www.gnu.org/licenses/agpl-3.0.html
+
+Se incluye una copia en el archivo LICENSE.full de este repositorio
+(generado con `curl https://www.gnu.org/licenses/agpl-3.0.txt > LICENSE.full`).
