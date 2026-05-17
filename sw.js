@@ -1,4 +1,4 @@
-const CACHE = 'maluap-v0-13-0';
+const CACHE = 'maluap-v0-13-1';
 const SHELL = [
   '/',
   '/app/',
@@ -46,20 +46,38 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request)
-        .then((res) => {
+  // Network-first para el "app shell" (HTML/JS/CSS/JSON) → siempre frescos si hay red
+  // Cache-first para iconos e imagenes (no cambian con frecuencia)
+  const isShell =
+    url.pathname === '/' ||
+    url.pathname === '/app/' ||
+    url.pathname.endsWith('/') ||
+    /\.(html|js|css|json)$/.test(url.pathname);
+
+  if (isShell) {
+    event.respondWith(
+      fetch(request).then((res) => {
+        if (res && res.ok && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(request))
+    );
+  } else {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((res) => {
           if (res && res.ok && res.type === 'basic') {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
           }
           return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+        });
+      })
+    );
+  }
 });
 
 async function handleShareTarget(request) {

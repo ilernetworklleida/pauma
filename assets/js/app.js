@@ -1046,6 +1046,18 @@
 
   function addFinal(text, speakerIdx) {
     if (!text) return;
+    // Dedup: ignorar finales repetidos consecutivos (bug conocido Web Speech Android)
+    const now = Date.now();
+    const norm = text.replace(/[.,!?…]+$/g, '').trim().toLowerCase();
+    if (state._lastFinalNorm === norm && (now - (state._lastFinalAt || 0)) < 4000) return;
+    // Dedup: si el ultimo segmento del MISMO hablante termina exactamente con este texto, ignorar
+    if (state.lastSegmentEl && state.lastSpeaker === (speakerIdx != null ? Number(speakerIdx) : null)) {
+      const prevText = (state.lastSegmentEl.querySelector('.segment-text')?.textContent || '').toLowerCase();
+      if (prevText && (prevText.endsWith(norm) || norm.length > 6 && prevText.includes(norm))) return;
+    }
+    state._lastFinalNorm = norm;
+    state._lastFinalAt = now;
+
     renderInterim('', null);
     const emotion = detectEmotion(text);
     const nameMatch = detectName(text);
@@ -1736,7 +1748,7 @@
   }
 
   // ════════════════════════════════════════════════════════════════
-  // PAUMA PASS (tarjeta de identidad sorda)
+  // MALUAP PASS (tarjeta de identidad sorda)
   // ════════════════════════════════════════════════════════════════
   function renderPassDetails() {
     el.passName.textContent = state.pass.name || 'Maluap';

@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   PAUMA · style.css · v0.4 (pulido fino)
+   MALUAP · style.css · v0.4 (pulido fino)
    - mobile-first, dark theme, sistema de escala 4px
    - microanimaciones, toggles propios, ondas en el mic, empty states
    - safe-area iOS, prefers-reduced-motion, prefers-contrast: more
@@ -1176,7 +1176,7 @@ body.face-to-face #transcript .welcome { transform: rotate(180deg); }
 }
 
 /* ════════════════════════════════════════════════
-   PAUMA PASS (tarjeta de identidad sorda)
+   MALUAP PASS (tarjeta de identidad sorda)
    ════════════════════════════════════════════════ */
 .view-pass {
   background: linear-gradient(180deg, var(--bg) 0%, #181428 100%);
