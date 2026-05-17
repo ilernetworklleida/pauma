@@ -25,6 +25,9 @@
     <button class="btn-text-sm" id="btnUpdate" type="button">Actualizar</button>
   </div>
 
+  <!-- Region aria-live para feedback toasts (anuncios a lectores de pantalla) -->
+  <div id="liveRegion" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
   <!-- ───────── AVISO TRANSCRIPCIÓN (consentimiento) ───────── -->
   <div class="notice-banner" id="noticeBanner" hidden role="status">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -413,7 +416,7 @@
           </span>
           <h3>Sobre Pauma</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.8 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.9 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>

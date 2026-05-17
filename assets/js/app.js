@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.8';
+  const VERSION = 'v0.9';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -259,6 +259,12 @@
     t.textContent = text;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 1900);
+    // FIX a11y: anunciar a lectores de pantalla via aria-live
+    const live = document.getElementById('liveRegion');
+    if (live) {
+      live.textContent = '';
+      setTimeout(() => { live.textContent = text; }, 50);
+    }
   }
 
   function setQuality(level, title) {
@@ -290,7 +296,17 @@
       const tx = state.historyDb.transaction('sessions', 'readwrite');
       tx.objectStore('sessions').put(s);
       tx.oncomplete = res;
-      tx.onerror = () => rej(tx.error);
+      tx.onerror = () => {
+        // FIX: quota exceeded → avisar al usuario una vez por sesion
+        const err = tx.error;
+        if (err && (err.name === 'QuotaExceededError' || err.code === 22)) {
+          if (!state._quotaWarned) {
+            state._quotaWarned = true;
+            feedbackToast('Espacio lleno · borra historial antiguo', 'err');
+          }
+        }
+        rej(err);
+      };
     });
   }
   async function dbGetSessions() {
@@ -801,6 +817,35 @@
     requestAnimationFrame(() => { target.scrollTop = target.scrollHeight; });
   }
 
+  // FIX perf: limita DOM a 500 burbujas visibles. Datos completos en
+  // currentSession + IndexedDB.
+  const MAX_VISIBLE_SEGMENTS = 500;
+  function pruneTranscriptIfNeeded() {
+    const segs = el.transcript.querySelectorAll('.segment:not(.interim)');
+    if (segs.length <= MAX_VISIBLE_SEGMENTS) return;
+    const removeCount = segs.length - MAX_VISIBLE_SEGMENTS;
+    for (let i = 0; i < removeCount; i++) {
+      const n = segs[i];
+      if (n === state.lastSegmentEl) state.lastSegmentEl = null;
+      n.remove();
+    }
+  }
+
+  // FIX perf: event delegation para taps en burbujas (1 listener total
+  // en lugar de 2 por burbuja).
+  function setupTranscriptDelegation() {
+    el.transcript.addEventListener('click', (e) => {
+      const speakerEl = e.target.closest('.segment-speaker');
+      if (speakerEl) {
+        const idx = Number(speakerEl.dataset.speaker);
+        if (!Number.isNaN(idx)) openRenameSpeaker(idx);
+        return;
+      }
+      const seg = e.target.closest('.segment');
+      if (seg && !seg.classList.contains('interim')) copySegmentText(seg);
+    });
+  }
+
   function renderInterim(text, speakerIdx) {
     const container = state.sosActive ? el.sosTranscript : el.transcript;
     if (!text) {
@@ -850,11 +895,7 @@
         div.className = 'segment' + (nameMatch ? ' name-match' : '');
         if (speaker != null) div.dataset.speaker = (speaker % PALETTE_LEN);
         div._t = Date.now();
-        div.addEventListener('click', (e) => {
-          // si han clicado el speaker name (rename), no copiar
-          if (e.target.closest('.segment-speaker')) return;
-          copySegmentText(div);
-        });
+        // FIX perf: NO addEventListener por burbuja. Event delegation en init().
         if (nameMatch) {
           vibrate([60, 50, 100, 50, 60]);
           feedbackToast('Te están llamando: "' + nameMatch + '"', 'ok');
@@ -868,7 +909,7 @@
           sp.className = 'segment-speaker';
           sp.textContent = speakerLabel(speaker);
           sp.dataset.speaker = speaker;
-          sp.addEventListener('click', () => openRenameSpeaker(speaker));
+          // FIX perf: sin addEventListener, se maneja por delegation
           meta.appendChild(sp);
         }
 
@@ -889,6 +930,9 @@
         el.transcript.appendChild(div);
         state.lastSegmentEl = div;
         state.lastSpeaker = speaker;
+
+        // FIX perf: pruning visual (no DB) si hay >500 burbujas visibles
+        pruneTranscriptIfNeeded();
       }
       scrollTranscript(el.transcript);
     }
@@ -1069,6 +1113,8 @@
     });
     if (view === 'history') renderHistory();
     if (view === 'settings') { renderSpeakersSettings(); renderStats(); }
+    // FIX UX: auto-focus en textareas al abrir vistas relevantes
+    if (view === 'speak') setTimeout(() => el.speakText?.focus(), 100);
   }
   function setupTabs() {
     el.tabs.forEach(tab => {
@@ -1427,6 +1473,8 @@
     activateView('sos');
     vibrate([60, 40, 60]);
     if (!state.listening) start();
+    // FIX UX: focus en input SOS para que la persona escriba al instante
+    setTimeout(() => el.sosInput?.focus(), 150);
   }
   function closeSos() {
     state.sosActive = false;
@@ -1601,7 +1649,25 @@
     setupServiceWorker();
     setupInstallPrompt();
     setupConfirm();
+    setupTranscriptDelegation();
+    setupBeforeUnload();
     setStatus('Listo · pulsa el micrófono para empezar');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // BEFORE UNLOAD: aviso si cierra con transcripcion activa
+  // ════════════════════════════════════════════════════════════════
+  function setupBeforeUnload() {
+    window.addEventListener('beforeunload', (e) => {
+      if (state.listening && state.currentSession?.segments?.length > 0) {
+        // Intentar persistir sincronamente antes de cerrar
+        try { persistCurrentSession(); } catch (_) {}
+        // Aviso al usuario (el texto exacto lo controla el navegador)
+        e.preventDefault();
+        e.returnValue = 'Hay una transcripción en curso. ¿Cerrar igualmente?';
+        return e.returnValue;
+      }
+    });
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1674,10 +1740,33 @@
     };
     try { data.sessions = await dbGetSessions(); } catch (_) {}
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const json = JSON.stringify(data, null, 2);
+    const filename = `pauma-backup-${new Date().toISOString().slice(0,10)}.json`;
+    const blob = new Blob([json], { type: 'application/json' });
+
+    // FIX: si Share API soporta archivos, ofrecer compartir directo
+    // (a Drive, email, WhatsApp...). Si no, descarga local.
+    if (navigator.canShare) {
+      const file = new File([blob], filename, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Backup de Pauma',
+            text: 'Mis datos de Pauma a fecha de ' + new Date().toLocaleDateString('es-ES'),
+          });
+          feedbackToast('Backup compartido', 'ok');
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // canceló el share
+          // si falla, cae al download local
+        }
+      }
+    }
+
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `pauma-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
     feedbackToast('Backup descargado', 'ok');
