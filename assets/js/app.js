@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.10';
+  const VERSION = 'v0.11';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -281,6 +281,11 @@
       try { navigator.vibrate(pattern); } catch (_) {}
     }
   }
+
+  // FIX iOS Safari: detectar y avisar limitaciones
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isIOSSafari = isIOS && isSafari;
 
   function feedbackToast(text, kind = '') {
     const t = document.createElement('div');
@@ -640,10 +645,16 @@
         return;
       }
     }
-    setStatus('Tu navegador no es compatible. Usa Chrome o Edge.', 'error');
+    // FIX iOS: mensaje claro segun navegador
+    if (isIOSSafari) {
+      setStatus('iPhone: la transcripción requiere conexión y permiso de micrófono', 'error');
+      feedbackToast('En iPhone necesitas internet · revisa permisos', 'err');
+    } else {
+      setStatus('Tu navegador no es compatible. Usa Chrome o Edge.', 'error');
+      feedbackToast('Navegador no compatible', 'err');
+    }
     setQuality('error', 'No disponible');
     await stopInternal();
-    feedbackToast('Navegador no compatible', 'err');
   }
 
   // versión sin vibrate ni "En pausa" para usar en errores de start()
