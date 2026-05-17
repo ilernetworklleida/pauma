@@ -1,4 +1,4 @@
-const CACHE = 'pauma-v0-11-0';
+const CACHE = 'pauma-v0-12-0';
 const SHELL = [
   '/',
   '/app/',
@@ -6,6 +6,7 @@ const SHELL = [
   '/404.html',
   '/assets/css/style.css',
   '/assets/js/app.js',
+  '/assets/js/auth.js',
   '/assets/icons/icon.svg',
   '/assets/icons/og.svg',
   '/manifest.json',

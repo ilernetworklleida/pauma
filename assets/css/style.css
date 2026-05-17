@@ -294,6 +294,51 @@ input[type="search"]::-webkit-search-cancel-button { display: none; }
 .faq details[open] summary::after { transform: rotate(45deg); color: var(--accent); }
 .faq p { margin-top: var(--s-3); color: var(--text-dim); line-height: var(--lh-base); }
 
+/* ── feedback form (landing) ───────────── */
+.feedback-section {
+  padding: var(--s-9) 0 var(--s-9);
+  border-top: 1px solid var(--hairline);
+}
+.feedback-section h2 {
+  font-size: var(--fs-xl); letter-spacing: -0.02em;
+  margin-bottom: var(--s-3); font-weight: 700;
+}
+.feedback-section .lead { max-width: 56ch; margin-bottom: var(--s-5); }
+.feedback-form {
+  max-width: 560px;
+  background: var(--bg-elev);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  display: flex; flex-direction: column; gap: var(--s-4);
+}
+.form-row { display: flex; flex-direction: column; gap: var(--s-2); }
+.form-row label {
+  font-size: var(--fs-sm); color: var(--text-dim);
+  font-weight: 600;
+}
+.feedback-form input,
+.feedback-form select,
+.feedback-form textarea {
+  width: 100%; background: var(--bg-elev-2); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: var(--s-3) var(--s-4);
+  font-size: var(--fs-md); min-height: 44px;
+  color: var(--text);
+  transition: border-color var(--d-base) var(--ease);
+}
+.feedback-form input:focus,
+.feedback-form select:focus,
+.feedback-form textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.feedback-form textarea { resize: vertical; }
+.hp-trap {
+  position: absolute; left: -9999px; opacity: 0; pointer-events: none;
+  height: 0; width: 0;
+}
+.form-hint { font-size: var(--fs-sm); margin-top: var(--s-2); }
+
 .cta-final { padding: var(--s-9) 0 var(--s-10); text-align: center; border-top: 1px solid var(--hairline); }
 .cta-final h2 { font-size: var(--fs-2xl); letter-spacing: -0.02em; margin-bottom: var(--s-3); font-weight: 700; }
 .cta-final p { color: var(--text-dim); margin-bottom: var(--s-5); font-size: var(--fs-lg); }

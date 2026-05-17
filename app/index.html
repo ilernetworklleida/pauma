@@ -442,6 +442,20 @@
         <p class="setting-hint">Solo de este dispositivo. No se envía a nadie.</p>
       </section>
 
+      <section class="setting-group" id="authSection">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <h3>Iniciar sesión (opcional)</h3>
+        </div>
+        <div id="authStatus"></div>
+        <input type="email" class="text-input" id="authEmail" placeholder="tu@correo.es" autocomplete="email" inputmode="email" style="margin-bottom: var(--s-3)">
+        <button class="btn btn-primary" id="authLoginBtn" type="button" style="width: 100%">Enviar enlace de acceso</button>
+        <button class="btn-text" id="authLogoutBtn" type="button" hidden style="width: 100%">Cerrar sesión</button>
+        <p class="setting-hint" id="authHint" style="margin-top: var(--s-3)"></p>
+      </section>
+
       <section class="setting-group">
         <div class="setting-group-head">
           <span class="setting-icon" aria-hidden="true">
@@ -628,5 +642,6 @@
   </div>
 
   <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/auth.js" defer></script>
 </body>
 </html>

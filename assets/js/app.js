@@ -1943,6 +1943,8 @@
     setupPresentation();
     setupSharedAudio();
     checkSharedAudio();
+    // Expose toast for auth.js / other modules
+    window.PaumaToast = feedbackToast;
     setStatus('Listo · pulsa el micrófono para empezar');
   }
 

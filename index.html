@@ -211,6 +211,75 @@
       <p>No requiere registro ni descarga. Solo abre Pauma y permite el micrófono.</p>
       <a href="/app/" class="btn btn-primary btn-large">Abrir Pauma</a>
     </section>
+
+    <section id="contacto" class="feedback-section">
+      <h2>Cuéntanos qué te falta</h2>
+      <p class="lead">Si eres persona sorda, si usas Pauma con alguien que lo es, o si simplemente tienes una idea: escríbenos. Lo leemos todo.</p>
+      <form id="feedbackForm" class="feedback-form" novalidate>
+        <div class="form-row">
+          <label for="fbCategory">¿Sobre qué?</label>
+          <select id="fbCategory" name="category" required>
+            <option value="general">Idea general</option>
+            <option value="bug">Algo no funciona</option>
+            <option value="accessibility">Accesibilidad / uso real</option>
+            <option value="translation">Traducción a otra lengua</option>
+            <option value="institution">Soy de una asociación / institución</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="fbEmail">Tu correo (opcional, solo si quieres respuesta)</label>
+          <input type="email" id="fbEmail" name="email" autocomplete="email" placeholder="tu@correo.es">
+        </div>
+        <div class="form-row">
+          <label for="fbMessage">Mensaje</label>
+          <textarea id="fbMessage" name="message" rows="5" minlength="5" maxlength="5000" required placeholder="Cuéntanos..."></textarea>
+        </div>
+        <input type="text" name="url" tabindex="-1" autocomplete="off" class="hp-trap" aria-hidden="true">
+        <button type="submit" class="btn btn-primary btn-large" id="fbSubmit">Enviar</button>
+        <p class="form-hint muted" id="fbHint">Llega a <a href="mailto:hola@maluap.es" style="color:var(--accent)">hola@maluap.es</a>. No usamos tu correo para nada más que responderte.</p>
+      </form>
+    </section>
+
+    <script>
+    (function() {
+      const f = document.getElementById('feedbackForm');
+      if (!f) return;
+      f.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('fbSubmit');
+        const hint = document.getElementById('fbHint');
+        btn.disabled = true; btn.textContent = 'Enviando...';
+        try {
+          const res = await fetch('/api/feedback.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              category: f.category.value,
+              email: f.email.value.trim(),
+              message: f.message.value.trim(),
+              url: f.url.value,
+            }),
+            credentials: 'same-origin',
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            hint.textContent = '✓ Gracias. Lo hemos recibido.';
+            hint.style.color = 'var(--success)';
+            f.reset();
+            btn.textContent = 'Enviado';
+          } else {
+            hint.textContent = data.message || 'No se pudo enviar. Inténtalo más tarde.';
+            hint.style.color = 'var(--listening)';
+            btn.disabled = false; btn.textContent = 'Reintentar';
+          }
+        } catch (err) {
+          hint.textContent = 'Error de red. Inténtalo más tarde.';
+          hint.style.color = 'var(--listening)';
+          btn.disabled = false; btn.textContent = 'Reintentar';
+        }
+      });
+    })();
+    </script>
   </main>
 
   <footer class="site-footer">
