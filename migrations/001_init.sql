@@ -62,10 +62,10 @@ CREATE TABLE IF NOT EXISTS assisted_calls (
 -- Cuotas/uso mensual por usuario
 CREATE TABLE IF NOT EXISTS usage_monthly (
     user_id         BIGINT UNSIGNED NOT NULL,
-    year_month      CHAR(7) NOT NULL,                  -- "2026-05"
+    period_ym       CHAR(7) NOT NULL,                  -- "2026-05" (year_month es palabra reservada en MySQL 8)
     transcribe_min  INT UNSIGNED DEFAULT 0,
     tts_chars       INT UNSIGNED DEFAULT 0,
     call_secs       INT UNSIGNED DEFAULT 0,
-    PRIMARY KEY (user_id, year_month),
+    PRIMARY KEY (user_id, period_ym),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
