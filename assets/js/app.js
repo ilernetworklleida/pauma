@@ -561,6 +561,40 @@
       .map(s => s.trim())
       .filter(Boolean)
       .slice(0, 30);
+
+    // 1) Clave Deepgram propia del usuario (BYO key) → conexion directa sin pasar por servidor
+    const userKey = (localStorage.getItem('maluap-dg-key') || '').trim();
+    if (userKey) {
+      const params = {
+        model: 'nova-2',
+        language: lang,
+        diarize: 'true',
+        punctuate: 'true',
+        smart_format: 'true',
+        numerals: 'true',
+        filler_words: 'false',
+        interim_results: 'true',
+        utterances: 'true',
+        utterance_end_ms: '1000',
+        vad_events: 'true',
+        encoding: 'linear16',
+        sample_rate: '16000',
+        channels: '1',
+        endpointing: '300',
+      };
+      const keywords = kws.slice(0, 30).map(k => k + ':2');
+      return {
+        provider: 'deepgram',
+        token: userKey,
+        key_id: null,
+        expires_at: null,
+        ws_url: 'wss://api.deepgram.com/v1/listen',
+        params,
+        keywords,
+      };
+    }
+
+    // 2) Clave configurada en el servidor (.env)
     const qs = new URLSearchParams({ lang });
     for (const k of kws) qs.append('keyword', k);
     try {
@@ -1185,12 +1219,32 @@
       btn.innerHTML = '<span class="spinner"></span> Generando…';
     }
     try {
-      const res = await fetch('/api/tts.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-        credentials: 'same-origin',
-      });
+      // BYO key: si el usuario ha puesto su clave ElevenLabs, llamamos directo a ElevenLabs
+      const userElKey = (localStorage.getItem('maluap-el-key') || '').trim();
+      let res;
+      if (userElKey) {
+        const voiceId = '21m00Tcm4TlvDq8ikWAM'; // Rachel
+        res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': userElKey,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg',
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.0, use_speaker_boost: true },
+          }),
+        });
+      } else {
+        res = await fetch('/api/tts.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+          credentials: 'same-origin',
+        });
+      }
       if (res.ok) {
         const blob = await res.blob();
         const audio = new Audio(URL.createObjectURL(blob));
@@ -2116,9 +2170,185 @@
     setupPresentation();
     setupSharedAudio();
     checkSharedAudio();
+    setupApiKeys();
+    setupSoundWatch();
     // Expose toast for auth.js / other modules
     window.MaluapToast = feedbackToast;
     setStatus('Listo · pulsa el micrófono para empezar');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // BYO API KEYS (Deepgram + ElevenLabs guardadas localmente)
+  // ════════════════════════════════════════════════════════════════
+  function setupApiKeys() {
+    const dgKey = document.getElementById('setDgKey');
+    const dgProject = document.getElementById('setDgProject');
+    const elKey = document.getElementById('setElKey');
+    const btnSave = document.getElementById('btnSaveKeys');
+    const btnClear = document.getElementById('btnClearKeys');
+    const status = document.getElementById('keysStatus');
+    if (!dgKey || !btnSave) return;
+
+    const masked = (s) => s ? s.slice(0, 4) + '••••••••' + s.slice(-4) : '';
+    const renderStatus = () => {
+      const dk = localStorage.getItem('maluap-dg-key');
+      const ek = localStorage.getItem('maluap-el-key');
+      if (!dk && !ek) {
+        status.textContent = '○ Sin claves · modo básico activo';
+        status.style.color = 'var(--text-dim)';
+      } else {
+        const parts = [];
+        if (dk) parts.push('✓ Deepgram: ' + masked(dk));
+        if (ek) parts.push('✓ ElevenLabs: ' + masked(ek));
+        status.innerHTML = parts.join('<br>');
+        status.style.color = 'var(--success, #34d399)';
+      }
+    };
+
+    dgKey.value = localStorage.getItem('maluap-dg-key') || '';
+    dgProject.value = localStorage.getItem('maluap-dg-project') || '';
+    elKey.value = localStorage.getItem('maluap-el-key') || '';
+    renderStatus();
+
+    btnSave.addEventListener('click', () => {
+      const dk = dgKey.value.trim();
+      const dp = dgProject.value.trim();
+      const ek = elKey.value.trim();
+      if (dk) localStorage.setItem('maluap-dg-key', dk); else localStorage.removeItem('maluap-dg-key');
+      if (dp) localStorage.setItem('maluap-dg-project', dp); else localStorage.removeItem('maluap-dg-project');
+      if (ek) localStorage.setItem('maluap-el-key', ek); else localStorage.removeItem('maluap-el-key');
+      feedbackToast('Claves guardadas en este móvil', 'ok');
+      renderStatus();
+    });
+
+    btnClear.addEventListener('click', () => {
+      askConfirm({
+        title: '¿Borrar las claves API?',
+        message: 'Quedarás en modo básico (Web Speech) hasta que pegues claves nuevas.',
+        confirmLabel: 'Sí, borrar',
+        onConfirm: () => {
+          localStorage.removeItem('maluap-dg-key');
+          localStorage.removeItem('maluap-dg-project');
+          localStorage.removeItem('maluap-el-key');
+          dgKey.value = ''; dgProject.value = ''; elKey.value = '';
+          renderStatus();
+          feedbackToast('Claves borradas', 'ok');
+        },
+      });
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // VIGILANTE DE SONIDOS (alerta haptica + visual ante sonidos fuertes)
+  // ════════════════════════════════════════════════════════════════
+  function setupSoundWatch() {
+    const toggle = document.getElementById('setWatchEnabled');
+    const status = document.getElementById('watchStatus');
+    if (!toggle) return;
+
+    state.watch = state.watch || { active: false, ctx: null, stream: null, raf: null, consecutive: 0, alertedAt: 0 };
+
+    toggle.checked = localStorage.getItem('maluap-watch') === '1';
+    updateWatchStatus();
+
+    toggle.addEventListener('change', async () => {
+      if (toggle.checked) {
+        localStorage.setItem('maluap-watch', '1');
+        const ok = await startSoundWatch();
+        if (!ok) { toggle.checked = false; localStorage.removeItem('maluap-watch'); }
+        updateWatchStatus();
+      } else {
+        localStorage.removeItem('maluap-watch');
+        stopSoundWatch();
+        updateWatchStatus();
+      }
+    });
+
+    // Auto-arrancar si estaba activo
+    if (toggle.checked) {
+      setTimeout(() => { startSoundWatch().then(updateWatchStatus); }, 800);
+    }
+
+    function updateWatchStatus() {
+      if (state.watch.active) {
+        status.textContent = '● Vigilando · te avisaremos con vibración y parpadeo';
+        status.style.color = 'var(--success, #34d399)';
+      } else if (toggle.checked) {
+        status.textContent = '⚠ No se pudo activar (¿permiso de micrófono?)';
+        status.style.color = 'var(--listening, #ef4444)';
+      } else {
+        status.textContent = '○ Desactivado';
+        status.style.color = 'var(--text-dim)';
+      }
+    }
+  }
+
+  async function startSoundWatch() {
+    if (state.watch.active) return true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      src.connect(analyser);
+      const data = new Uint8Array(analyser.fftSize);
+      state.watch.active = true;
+      state.watch.stream = stream;
+      state.watch.ctx = ctx;
+      state.watch.consecutive = 0;
+      state.watch.alertedAt = 0;
+
+      const THRESHOLD = 50; // amplitud sobre el centro (128) tras escalar
+      const FRAMES_TO_ALERT = 12; // ~200ms de sonido fuerte sostenido
+
+      const tick = () => {
+        if (!state.watch.active) return;
+        analyser.getByteTimeDomainData(data);
+        let peak = 0;
+        for (let i = 0; i < data.length; i++) {
+          const v = Math.abs(data[i] - 128);
+          if (v > peak) peak = v;
+        }
+        if (peak > THRESHOLD) {
+          state.watch.consecutive++;
+          if (state.watch.consecutive >= FRAMES_TO_ALERT) {
+            const now = Date.now();
+            if (now - state.watch.alertedAt > 3000) {
+              triggerSoundAlert(peak);
+              state.watch.alertedAt = now;
+            }
+            state.watch.consecutive = 0;
+          }
+        } else {
+          state.watch.consecutive = Math.max(0, state.watch.consecutive - 1);
+        }
+        state.watch.raf = requestAnimationFrame(tick);
+      };
+      tick();
+      return true;
+    } catch (err) {
+      console.warn('SoundWatch start failed', err);
+      state.watch.active = false;
+      return false;
+    }
+  }
+
+  function stopSoundWatch() {
+    if (state.watch.raf) cancelAnimationFrame(state.watch.raf);
+    if (state.watch.stream) state.watch.stream.getTracks().forEach(t => t.stop());
+    if (state.watch.ctx) { try { state.watch.ctx.close(); } catch (_) {} }
+    state.watch = { active: false, ctx: null, stream: null, raf: null, consecutive: 0, alertedAt: 0 };
+  }
+
+  function triggerSoundAlert(peak) {
+    vibrate([200, 80, 200, 80, 400, 80, 200]);
+    feedbackToast('🔔 Sonido fuerte detectado', 'warn');
+    document.body.classList.add('flash-alert');
+    setTimeout(() => document.body.classList.remove('flash-alert'), 1600);
   }
 
   // ════════════════════════════════════════════════════════════════

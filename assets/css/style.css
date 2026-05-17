@@ -1469,3 +1469,16 @@ kbd {
   .welcome-mic::before, .welcome-mic::after,
   .tab-mic.listening::after { display: none; }
 }
+
+/* Vigilante de sonidos: flash visual cuando detecta sonido fuerte */
+@keyframes maluapFlashAlert {
+  0%, 100% { background: var(--bg); }
+  20%, 60% { background: #ef4444; }
+  40%, 80% { background: #fbbf24; }
+}
+body.flash-alert {
+  animation: maluapFlashAlert 1.6s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.flash-alert { animation: none; background: #fbbf24; }
+}

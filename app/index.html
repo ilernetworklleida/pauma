@@ -22,7 +22,7 @@
   <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-12-13-pro-max.png">
   <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-14-15.png">
 
-  <link rel="stylesheet" href="/assets/css/style.css?v=13">
+  <link rel="stylesheet" href="/assets/css/style.css?v=14">
 </head>
 <body class="app">
 
@@ -375,6 +375,55 @@
         <p class="setting-hint">Palabras o expresiones que Maluap debería reconocer mejor. Útil para motes familiares, nombres propios, jerga del trabajo, palabras médicas...</p>
       </section>
 
+      <section class="setting-group" id="apiKeysSection">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M4.22 4.22l4.24 4.24"/><path d="M19.78 19.78l-4.24-4.24"/><path d="M1 12h6m6 0h6"/><path d="M4.22 19.78l4.24-4.24"/><path d="M19.78 4.22l-4.24 4.24"/></svg>
+          </span>
+          <h3>Calidad alta · mis claves API</h3>
+        </div>
+        <p class="setting-hint" style="margin-bottom: var(--s-3)">
+          Por defecto Maluap usa el motor de voz del navegador (gratis pero limitado). Para
+          <strong>identificar hablantes</strong>, mejor calidad y que funcione en iPhone,
+          regístrate en Deepgram (te dan $200 gratis = ~770 horas) y pega aquí tu clave.
+          La clave se guarda <strong>solo en este móvil</strong>, no la mandamos a nadie.
+        </p>
+        <input type="text" class="text-input" id="setDgKey" maxlength="120" placeholder="DEEPGRAM_API_KEY (ej. 1234abcd...)" autocomplete="off" spellcheck="false" style="font-family: monospace; font-size: var(--fs-sm)">
+        <input type="text" class="text-input" id="setDgProject" maxlength="80" placeholder="DEEPGRAM_PROJECT_ID (opcional)" autocomplete="off" spellcheck="false" style="margin-top: var(--s-2); font-family: monospace; font-size: var(--fs-sm)">
+        <input type="text" class="text-input" id="setElKey" maxlength="120" placeholder="ELEVENLABS_API_KEY (opcional, para voz natural)" autocomplete="off" spellcheck="false" style="margin-top: var(--s-2); font-family: monospace; font-size: var(--fs-sm)">
+        <div style="display: flex; gap: var(--s-2); margin-top: var(--s-3)">
+          <button class="btn btn-primary" id="btnSaveKeys" type="button" style="flex: 1">Guardar claves</button>
+          <button class="btn-text" id="btnClearKeys" type="button">Borrar</button>
+        </div>
+        <p class="setting-hint" style="margin-top: var(--s-3)">
+          ¿Cómo conseguirlas?<br>
+          1. <a href="https://console.deepgram.com/signup" target="_blank" rel="noopener" style="color: var(--accent)">console.deepgram.com/signup</a> · crea cuenta gratis ($200 crédito)<br>
+          2. Settings → API Keys → Create New Key → pégala arriba<br>
+          3. (Opcional) <a href="https://elevenlabs.io/app/sign-up" target="_blank" rel="noopener" style="color: var(--accent)">elevenlabs.io/app/sign-up</a> para voz natural · 10k chars/mes gratis
+        </p>
+        <p id="keysStatus" class="setting-hint" style="margin-top: var(--s-2); font-weight: 600"></p>
+      </section>
+
+      <section class="setting-group" id="watchSection">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </span>
+          <h3>Vigilante de sonidos</h3>
+        </div>
+        <p class="setting-hint" style="margin-bottom: var(--s-3)">
+          Activa el micrófono en segundo plano. Cuando suena algo <strong>fuerte y sostenido</strong>
+          (timbre, alarma, llanto, ladrido) tu móvil <strong>vibra fuerte y la pantalla parpadea</strong>.
+          Útil en casa cuando no esperas oír nada. Mantén la app abierta.
+        </p>
+        <label class="toggle">
+          <input type="checkbox" id="setWatchEnabled">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Activar vigilante de sonidos</span>
+        </label>
+        <p id="watchStatus" class="setting-hint" style="margin-top: var(--s-2); font-weight: 600"></p>
+      </section>
+
       <section class="setting-group">
         <div class="setting-group-head">
           <span class="setting-icon" aria-hidden="true">
@@ -642,7 +691,7 @@
     </div>
   </div>
 
-  <script src="/assets/js/app.js?v=13" defer></script>
-  <script src="/assets/js/auth.js?v=13" defer></script>
+  <script src="/assets/js/app.js?v=14" defer></script>
+  <script src="/assets/js/auth.js?v=14" defer></script>
 </body>
 </html>
