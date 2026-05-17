@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\RateLimiter;
+use Maluap\Config;
+use Maluap\RateLimiter;
 
 $origin = Config::get('ALLOWED_ORIGIN', 'https://maluap.es');
 $reqOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';

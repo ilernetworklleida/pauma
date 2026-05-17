@@ -1,6 +1,6 @@
 {
-  "name": "Pauma · Transcripción en vivo",
-  "short_name": "Pauma",
+  "name": "Maluap · Transcripción en vivo",
+  "short_name": "Maluap",
   "description": "Transcripción en vivo con identificación de hablantes y voz natural para responder. Para personas sordas y sus familias.",
   "id": "/",
   "start_url": "/app/",
@@ -44,7 +44,7 @@
       "name": "Empezar a transcribir",
       "short_name": "Transcribir",
       "url": "/app/?start=listen",
-      "description": "Abre Pauma listo para escuchar",
+      "description": "Abre Maluap listo para escuchar",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {

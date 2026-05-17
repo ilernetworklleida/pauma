@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\RateLimiter;
-use Pauma\Database;
-use Pauma\Mailer;
+use Maluap\Config;
+use Maluap\RateLimiter;
+use Maluap\Database;
+use Maluap\Mailer;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -71,7 +71,7 @@ if (Database::isConfigured()) {
             ]);
         $saved = true;
     } catch (\Throwable $e) {
-        error_log('[pauma feedback db] ' . $e->getMessage());
+        error_log('[maluap feedback db] ' . $e->getMessage());
     }
 }
 
@@ -79,9 +79,9 @@ if (Database::isConfigured()) {
 $emailSent = false;
 try {
     $mailer = Mailer::fromConfig();
-    $subject = '[Pauma feedback] ' . $category . ' · ' . substr($message, 0, 40);
+    $subject = '[Maluap feedback] ' . $category . ' · ' . substr($message, 0, 40);
     $html = '<div style="font-family: -apple-system, sans-serif; max-width: 560px">';
-    $html .= '<h2 style="color: #7c3aed">Nuevo feedback en Pauma</h2>';
+    $html .= '<h2 style="color: #7c3aed">Nuevo feedback en Maluap</h2>';
     $html .= '<p><strong>Categoría:</strong> ' . htmlspecialchars($category) . '</p>';
     if ($email) $html .= '<p><strong>De:</strong> ' . htmlspecialchars($email) . '</p>';
     $html .= '<p><strong>Mensaje:</strong></p>';
@@ -89,14 +89,14 @@ try {
     $html .= '<hr><p style="color: #999; font-size: 12px">User agent: ' . htmlspecialchars(substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 200)) . '</p>';
     $html .= '</div>';
 
-    $text = "Nuevo feedback en Pauma\n\nCategoría: {$category}\n";
+    $text = "Nuevo feedback en Maluap\n\nCategoría: {$category}\n";
     if ($email) $text .= "De: {$email}\n";
     $text .= "\nMensaje:\n{$message}\n";
 
     $to = Config::get('FEEDBACK_TO', Config::get('SMTP_FROM', 'hola@maluap.es'));
     $emailSent = $mailer->send($to, $subject, $html, $text, $email ?: null);
 } catch (\Throwable $e) {
-    error_log('[pauma feedback mail] ' . $e->getMessage());
+    error_log('[maluap feedback mail] ' . $e->getMessage());
 }
 
 if (!$saved && !$emailSent) {

@@ -1,4 +1,4 @@
-const CACHE = 'pauma-v0-12-0';
+const CACHE = 'maluap-v0-13-0';
 const SHELL = [
   '/',
   '/app/',
@@ -68,7 +68,7 @@ async function handleShareTarget(request) {
     const file = form.get('audio');
     if (file && file instanceof File) {
       const buf = await file.arrayBuffer();
-      await caches.open('pauma-shared').then(c =>
+      await caches.open('maluap-shared').then(c =>
         c.put('/_shared/audio', new Response(buf, {
           headers: { 'Content-Type': file.type || 'audio/mpeg' }
         }))

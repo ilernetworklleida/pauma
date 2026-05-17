@@ -1,6 +1,6 @@
-# Contribuir a Pauma
+# Contribuir a Maluap
 
-Gracias por considerar contribuir. Pauma es una herramienta de accesibilidad construida por y para la comunidad sorda.
+Gracias por considerar contribuir. Maluap es una herramienta de accesibilidad construida por y para la comunidad sorda.
 
 ## Antes de contribuir
 
@@ -12,8 +12,8 @@ Lee:
 ## Tipos de contribución que necesitamos
 
 ### Si eres persona sorda
-**Lo que más valoramos.** Tu experiencia usando Pauma vale más que mil pull requests. Abre un issue con la etiqueta `feedback-sordo` describiendo:
-- Una situación donde Pauma falló o no estaba a la altura
+**Lo que más valoramos.** Tu experiencia usando Maluap vale más que mil pull requests. Abre un issue con la etiqueta `feedback-sordo` describiendo:
+- Una situación donde Maluap falló o no estaba a la altura
 - Algo que esperabas que hiciera y no hace
 - Una expresión, microcopy o framing que te resultó incómodo
 
@@ -24,7 +24,7 @@ Lee:
 - Microcopy revisado con la comunidad antes de mergear
 
 ### Si eres traductor/a
-Pauma necesita traducciones a tantas lenguas como sea posible. Archivos en `/i18n/`. Sigue el patrón de `es.json` y abre un PR con tu nueva lengua.
+Maluap necesita traducciones a tantas lenguas como sea posible. Archivos en `/i18n/`. Sigue el patrón de `es.json` y abre un PR con tu nueva lengua.
 
 ### Si eres diseñador/a
 Accesibilidad WCAG AAA, contraste, motion, iconografía. Issues con `design`.
@@ -81,4 +81,4 @@ Estudios sobre uso real, métricas de impacto, comparación con otras soluciones
 
 Abre un issue antes de empezar a trabajar para asegurarte de que tu contribución encaja con la dirección del proyecto.
 
-¡Gracias por hacer Pauma mejor!
+¡Gracias por hacer Maluap mejor!

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Pauma;
+namespace Maluap;
 
 final class Deepgram
 {
@@ -24,7 +24,7 @@ final class Deepgram
 
         $url = 'https://api.deepgram.com/v1/projects/' . urlencode($this->projectId) . '/keys';
         $payload = json_encode([
-            'comment' => 'pauma-temp-' . substr(bin2hex(random_bytes(4)), 0, 6),
+            'comment' => 'maluap-temp-' . substr(bin2hex(random_bytes(4)), 0, 6),
             'scopes' => ['member', 'usage:write'],
             'time_to_live_in_seconds' => $ttlSeconds,
         ], JSON_THROW_ON_ERROR);

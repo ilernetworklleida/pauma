@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\Database;
+use Maluap\Config;
+use Maluap\Database;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-$cookie = $_COOKIE['pauma_session'] ?? '';
+$cookie = $_COOKIE['maluap_session'] ?? '';
 if (!$cookie || !Database::isConfigured()) {
     echo json_encode(['logged_in' => false]);
     exit;
@@ -47,6 +47,6 @@ try {
         ],
     ]);
 } catch (\Throwable $e) {
-    error_log('[pauma me] ' . $e->getMessage());
+    error_log('[maluap me] ' . $e->getMessage());
     echo json_encode(['logged_in' => false]);
 }

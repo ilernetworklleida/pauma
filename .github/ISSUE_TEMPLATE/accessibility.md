@@ -5,13 +5,13 @@ title: '[a11y] '
 labels: feedback-sordo, accessibility
 ---
 
-> Este tipo de feedback es **el más importante** para Pauma. Gracias por tomarte el tiempo.
+> Este tipo de feedback es **el más importante** para Maluap. Gracias por tomarte el tiempo.
 
 ## La situación
 
 ¿En qué momento o contexto estabas? (cena familiar, llamada, calle, médico...)
 
-## Qué hizo Pauma
+## Qué hizo Maluap
 
 ## Qué necesitabas que hiciera
 
@@ -27,4 +27,4 @@ Si tienes una idea concreta de cómo arreglarlo, descríbela.
 
 - Idioma de la app:
 - Si oralizas / usas LSE / lees labios:
-- Versión de Pauma:
+- Versión de Maluap:

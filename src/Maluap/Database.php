@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Pauma;
+namespace Maluap;
 
 final class Database
 {

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\Database;
+use Maluap\Config;
+use Maluap\Database;
 
 $token = (string) ($_GET['t'] ?? '');
 $token = preg_replace('/[^a-f0-9]/i', '', $token);
@@ -40,7 +40,7 @@ try {
     $sig = hash_hmac('sha256', $payload, $secret);
     $sessionValue = $payload . '.' . $sig;
 
-    setcookie('pauma_session', $sessionValue, [
+    setcookie('maluap_session', $sessionValue, [
         'expires' => $expires,
         'path' => '/',
         'secure' => true,
@@ -50,7 +50,7 @@ try {
 
     redirectTo('/app/?login=ok');
 } catch (\Throwable $e) {
-    error_log('[pauma verify] ' . $e->getMessage());
+    error_log('[maluap verify] ' . $e->getMessage());
     redirectTo('/app/?login=error');
 }
 

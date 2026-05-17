@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\Database;
+use Maluap\Config;
+use Maluap\Database;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

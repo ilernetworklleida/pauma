@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\RateLimiter;
-use Pauma\Database;
-use Pauma\Mailer;
+use Maluap\Config;
+use Maluap\RateLimiter;
+use Maluap\Database;
+use Maluap\Mailer;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -75,28 +75,28 @@ try {
     $magicUrl = 'https://maluap.es/api/verify.php?t=' . urlencode($rawToken);
 
     $mailer = Mailer::fromConfig();
-    $subject = 'Acceso a Pauma';
+    $subject = 'Acceso a Maluap';
     $html = '<div style="font-family: -apple-system, sans-serif; max-width: 520px; padding: 24px">';
-    $html .= '<h1 style="color: #7c3aed; font-size: 24px">Tu enlace para entrar a Pauma</h1>';
-    $html .= '<p>Hola, alguien (esperamos que tú) ha pedido un enlace para entrar a Pauma con este correo.</p>';
+    $html .= '<h1 style="color: #7c3aed; font-size: 24px">Tu enlace para entrar a Maluap</h1>';
+    $html .= '<p>Hola, alguien (esperamos que tú) ha pedido un enlace para entrar a Maluap con este correo.</p>';
     $html .= '<p style="margin: 24px 0">';
-    $html .= '<a href="' . htmlspecialchars($magicUrl) . '" style="background: #7c3aed; color: white; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 600">Entrar a Pauma</a>';
+    $html .= '<a href="' . htmlspecialchars($magicUrl) . '" style="background: #7c3aed; color: white; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 600">Entrar a Maluap</a>';
     $html .= '</p>';
     $html .= '<p style="color: #666; font-size: 14px">Este enlace caduca en 10 minutos y solo funciona una vez.</p>';
     $html .= '<p style="color: #666; font-size: 14px">Si no has sido tú, simplemente ignora este correo.</p>';
     $html .= '<hr style="border: none; border-top: 1px solid #eee; margin: 24px 0">';
-    $html .= '<p style="color: #999; font-size: 12px">Pauma · Comunicación accesible para personas sordas<br>';
+    $html .= '<p style="color: #999; font-size: 12px">Maluap · Comunicación accesible para personas sordas<br>';
     $html .= '<a href="https://maluap.es" style="color: #7c3aed">maluap.es</a> · ';
     $html .= '<a href="https://maluap.es/privacidad.html" style="color: #7c3aed">Privacidad</a></p>';
     $html .= '</div>';
 
-    $text = "Tu enlace para entrar a Pauma:\n\n{$magicUrl}\n\nCaduca en 10 minutos. Si no has sido tú, ignora este correo.\n\n-- Pauma · maluap.es";
+    $text = "Tu enlace para entrar a Maluap:\n\n{$magicUrl}\n\nCaduca en 10 minutos. Si no has sido tú, ignora este correo.\n\n-- Maluap · maluap.es";
 
     $mailer->send($email, $subject, $html, $text);
 
     echo json_encode(['ok' => true, 'message' => 'Te hemos enviado un enlace al correo.']);
 } catch (\Throwable $e) {
-    error_log('[pauma login] ' . $e->getMessage());
+    error_log('[maluap login] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'login_failed']);
 }

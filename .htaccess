@@ -1,4 +1,4 @@
-# Pauma · Apache config para Hostinger
+# Maluap · Apache config para Hostinger
 
 # ── Errores personalizados ─────────────────────────────────
 ErrorDocument 404 /404.html

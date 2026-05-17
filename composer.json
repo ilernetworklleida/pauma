@@ -1,6 +1,6 @@
 {
-  "name": "ilernetworklleida/pauma",
-  "description": "Pauma. Asistente IA para personas sordas: transcripcion en vivo con diarizacion, voz natural para hablar, historial cifrado y deteccion de tono.",
+  "name": "ilernetworklleida/maluap",
+  "description": "Maluap. Asistente IA para personas sordas: transcripcion en vivo con diarizacion, voz natural para hablar, historial cifrado y deteccion de tono.",
   "type": "project",
   "license": "proprietary",
   "homepage": "https://maluap.es",
@@ -11,7 +11,7 @@
     "ext-mbstring": "*"
   },
   "autoload": {
-    "psr-4": { "Pauma\\": "src/Pauma/" },
+    "psr-4": { "Maluap\\": "src/Maluap/" },
     "files": ["src/bootstrap.php"]
   },
   "config": {

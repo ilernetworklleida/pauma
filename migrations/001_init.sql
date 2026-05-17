@@ -1,4 +1,4 @@
--- Pauma · 001_init.sql
+-- Maluap · 001_init.sql
 -- Esquema inicial para funcionalidades futuras (v0.4+).
 -- En v0.3 NO se usa, pero dejo el esquema listo para cuentas, feedback
 -- de la comunidad sorda y llamadas asistidas.

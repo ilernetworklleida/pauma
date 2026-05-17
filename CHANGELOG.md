@@ -14,7 +14,7 @@ Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) 
 - CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
 - Plantillas de issue (bug, feature, accesibilidad)
 - Workflow de GitHub Actions para deploy automático a Hostinger
-- Vocabulario personalizado: palabras importantes que Pauma reconoce mejor (Deepgram `keywords`)
+- Vocabulario personalizado: palabras importantes que Maluap reconoce mejor (Deepgram `keywords`)
 - Aviso visible de transcripción al iniciar (consentimiento para terceros)
 
 ### Cambiado

@@ -26,7 +26,7 @@ labels: bug
 - Dispositivo:
 - Sistema operativo:
 - Navegador y versión:
-- Versión de Pauma (en Ajustes > Sobre):
+- Versión de Maluap (en Ajustes > Sobre):
 
 ## Información adicional
 

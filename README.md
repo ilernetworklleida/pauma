@@ -1,15 +1,15 @@
-# Pauma
+# Maluap
 
 Asistente IA para personas sordas. Transcripcion en vivo con diarizacion, modo "yo hablo" con voz natural, historial local con buscador, modo SOS para urgencias, push-to-talk y deteccion de tono.
 
 ## Datos del proyecto
 
-- Producto: **Pauma**
-- Dominio: **https://maluap.es** (palindromo de pauma)
+- Producto: **Maluap**
+- Dominio: **https://maluap.es** (palindromo de maluap)
 - Stack: PWA (HTML/CSS/JS vanilla) + PHP 8.1 + MySQL (opcional, v0.4+)
 - Hosting: Hostinger shared
 - Ruta remota: `/home/u862342697/domains/maluap.es/public_html/`
-- Repo: `ilernetworklleida/pauma`
+- Repo: `ilernetworklleida/maluap`
 - Rama: `main`
 
 ## Estructura
@@ -28,7 +28,7 @@ Asistente IA para personas sordas. Transcripcion en vivo con diarizacion, modo "
 │   └── health.php          estado del sistema (sin info sensible)
 ├── src/
 │   ├── bootstrap.php       autoloader manual + carga .env
-│   └── Pauma/
+│   └── Maluap/
 │       ├── Config.php      lee .env
 │       ├── RateLimiter.php proteccion abuso por IP
 │       ├── Deepgram.php    cliente para crear/revocar temp keys
@@ -154,6 +154,6 @@ Lee `/privacidad.html`. Resumen:
 
 ## Filosofia
 
-Pauma es gratis para uso personal y siempre lo sera. La accesibilidad no se vende.
+Maluap es gratis para uso personal y siempre lo sera. La accesibilidad no se vende.
 
 Si los costes de API escalan, se cubriran con donaciones, subvenciones o un tier premium para empresas que quieran ofrecerla a sus empleados sordos, pero el nucleo accesible nunca tendra paywall.

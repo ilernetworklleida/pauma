@@ -24,7 +24,7 @@ Incluye:
 - Plan de mitigación comunicado contigo
 - Crédito público una vez parcheado (si lo deseas)
 
-## Vulnerabilidades especialmente graves para Pauma
+## Vulnerabilidades especialmente graves para Maluap
 
 Por la naturaleza del proyecto, tomamos extra seriamente:
 

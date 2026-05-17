@@ -1,4 +1,4 @@
-/* Pauma · auth.js
+/* Maluap · auth.js
  * Magic link login opcional. Mantiene la sesion via cookie HttpOnly del servidor.
  * En cliente solo mostramos UI: pedir enlace, mostrar usuario logueado, logout.
  */
@@ -65,7 +65,7 @@
         el.statusBox.innerHTML = `
           <div style="background: var(--accent-soft); padding: var(--s-4); border-radius: var(--r-md); border: 1px solid var(--accent)">
             <p><strong>✓ Te hemos enviado un enlace.</strong></p>
-            <p style="margin-top: var(--s-2)">Revisa <strong>${escapeHtml(email)}</strong> y pulsa "Entrar a Pauma". El enlace caduca en 10 minutos.</p>
+            <p style="margin-top: var(--s-2)">Revisa <strong>${escapeHtml(email)}</strong> y pulsa "Entrar a Maluap". El enlace caduca en 10 minutos.</p>
           </div>
         `;
         el.emailInput.hidden = true;
@@ -107,8 +107,8 @@
       error: { text: 'Hubo un problema al iniciar sesión', kind: 'err' },
     };
     const m = messages[flag];
-    if (m && typeof window.PaumaToast === 'function') {
-      window.PaumaToast(m.text, m.kind);
+    if (m && typeof window.MaluapToast === 'function') {
+      window.MaluapToast(m.text, m.kind);
     }
     history.replaceState({}, '', '/app/');
   }

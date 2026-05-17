@@ -4,7 +4,7 @@
 
 En el interés de fomentar un entorno abierto y acogedor, nosotros como contribuyentes y mantenedores nos comprometemos a hacer de la participación en nuestro proyecto y nuestra comunidad una experiencia libre de acoso para todos, independientemente de la edad, dimensión corporal, discapacidad visible o invisible, etnia, identidad y expresión de género, nivel de experiencia, educación, situación socio-económica, nacionalidad, apariencia personal, raza, religión, identidad u orientación sexual.
 
-Pauma es un proyecto de accesibilidad. Una falta de respeto a las personas sordas o a cualquier comunidad infravisibilizada se considera especialmente grave.
+Maluap es un proyecto de accesibilidad. Una falta de respeto a las personas sordas o a cualquier comunidad infravisibilizada se considera especialmente grave.
 
 ## Nuestros estándares
 

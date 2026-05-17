@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-setcookie('pauma_session', '', [
+setcookie('maluap_session', '', [
     'expires' => time() - 3600,
     'path' => '/',
     'secure' => true,

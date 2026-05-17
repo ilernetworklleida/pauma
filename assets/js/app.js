@@ -1,4 +1,4 @@
-/* Pauma · app.js · v0.3
+/* Maluap · app.js · v0.3
  * Transcripción en vivo con diarización, modo "yo hablo", historial con buscador
  * y exportación, modo SOS, push-to-talk, estadísticas, onboarding y auto-update PWA.
  * Sin dependencias externas. Chrome/Edge Android y desktop.
@@ -7,10 +7,32 @@
   'use strict';
 
   // ════════════════════════════════════════════════════════════════
+  // ONE-SHOT MIGRATION: pauma-* → maluap-* (v0.13 rename)
+  // ════════════════════════════════════════════════════════════════
+  (function migrateLegacyKeys() {
+    try {
+      if (localStorage.getItem('maluap-migrated-from-pauma') === '1') return;
+      const moved = [];
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('pauma-'))
+        .forEach(k => {
+          const newKey = 'maluap-' + k.slice('pauma-'.length);
+          if (!localStorage.getItem(newKey)) {
+            localStorage.setItem(newKey, localStorage.getItem(k));
+          }
+          localStorage.removeItem(k);
+          moved.push(newKey);
+        });
+      localStorage.setItem('maluap-migrated-from-pauma', '1');
+      if (moved.length) console.info('[maluap] migrated ' + moved.length + ' settings from pauma');
+    } catch (_) {}
+  })();
+
+  // ════════════════════════════════════════════════════════════════
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.11';
+  const VERSION = 'v0.13';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -19,6 +41,9 @@
     { id: 'compras',    label: 'Compras' },
     { id: 'transporte', label: 'Transporte' },
     { id: 'social',     label: 'Social' },
+    { id: 'tramites',   label: 'Trámites' },
+    { id: 'trabajo',    label: 'Trabajo' },
+    { id: 'casa',       label: 'Casa' },
   ];
 
   const DEFAULT_PHRASES = {
@@ -27,37 +52,73 @@
       'Más despacio, por favor.',
       'No te entiendo, ¿puedes repetir?',
       'Por favor, mírame a los ojos cuando hablas.',
+      'No tapes la boca cuando hablas, leo los labios.',
+      'Escribe en este móvil, por favor.',
       'Gracias.',
+      'Sí.',
+      'No.',
     ],
     urgencia: [
       'Necesito ayuda urgente.',
       'Llama a una ambulancia, por favor.',
       'Soy sorda, no puedo oír las indicaciones por megafonía.',
       'Mi pareja también es sorda.',
+      'Avisa a este contacto de emergencia: ',
+      'No puedo hablar por teléfono. Escríbeme.',
     ],
     medico: [
       'Soy sorda. Por favor, escribe aquí lo que me digas.',
       '¿Me puedes explicar el tratamiento por escrito?',
       'No tengo alergias conocidas.',
+      'Soy alérgica a: ',
       '¿Puedes ponerme la receta por escrito?',
+      '¿Cuándo tengo la próxima cita?',
+      'Necesito un intérprete de LSE para esta consulta.',
+      '¿Me puedes apuntar la dosis y horario?',
     ],
     compras: [
       '¿Me puedes apuntar el precio aquí?',
       '¿Tenéis esto en otro color?',
       '¿Aceptáis tarjeta?',
       'No, gracias, solo estoy mirando.',
+      '¿Me lo puedes envolver para regalo?',
+      '¿Hay devolución si no me sirve?',
     ],
     transporte: [
       '¿A qué hora sale el siguiente?',
       'Por favor, escríbeme la dirección.',
       'Necesito que el conductor me avise cuando lleguemos.',
       '¿Puedes apuntarme el número de andén?',
+      '¿En qué parada me bajo para ir a...?',
+      'Hay retraso, ¿me lo puedes escribir?',
     ],
     social: [
       'Encantada de conocerte.',
       '¿Cómo te llamas?',
       '¿Te apetece tomar algo?',
       'Lo siento, no he entendido.',
+      '¿Puedes repetir más despacio?',
+      'Discúlpame, estoy leyendo lo que has dicho.',
+    ],
+    tramites: [
+      'Necesito un intérprete de LSE para este trámite.',
+      '¿Me podéis comunicar por correo o WhatsApp en vez de llamar?',
+      'No tengo teléfono fijo donde se me pueda llamar.',
+      '¿Puedo presentar esto por escrito?',
+      '¿Qué documentos necesito traer?',
+    ],
+    trabajo: [
+      'Soy sorda. Para reuniones, necesito que activéis los subtítulos en directo.',
+      '¿Puedes ponerlo por escrito en el chat para que lo lea?',
+      'Por favor, no habléis a la vez en la reunión.',
+      'Necesito ver tu cara para leer los labios.',
+      '¿Me reenvías un resumen por escrito al acabar?',
+    ],
+    casa: [
+      'Han llamado al timbre.',
+      'Avísame con una luz o con vibración, no con un grito.',
+      'Si me llamas y no respondo, es porque no te oigo, no te ignoro.',
+      '¿Me escribes lo que está sonando?',
     ],
   };
 
@@ -65,11 +126,11 @@
     view: 'listen',
     sosActive: false,
     sosOrigin: null, // a qué vista volver al cerrar SOS
-    lang: localStorage.getItem('pauma-lang') || 'es-ES',
-    fontSize: localStorage.getItem('pauma-fontsize') || 'normal',
-    showEmotion: localStorage.getItem('pauma-emotion') !== '0',
-    saveHistory: localStorage.getItem('pauma-history') !== '0',
-    pushToTalk: localStorage.getItem('pauma-ptt') === '1',
+    lang: localStorage.getItem('maluap-lang') || 'es-ES',
+    fontSize: localStorage.getItem('maluap-fontsize') || 'normal',
+    showEmotion: localStorage.getItem('maluap-emotion') !== '0',
+    saveHistory: localStorage.getItem('maluap-history') !== '0',
+    pushToTalk: localStorage.getItem('maluap-ptt') === '1',
 
     listening: false,
     provider: null,
@@ -84,16 +145,16 @@
     wakeLock: null,
     keepAliveTimer: null,
     currentKeyId: null,
-    faceToFace: localStorage.getItem('pauma-f2f') === '1',
-    myName: localStorage.getItem('pauma-my-name') || '',
-    keywords: localStorage.getItem('pauma-keywords') || '',
-    showNotice: localStorage.getItem('pauma-show-notice') !== '0',
+    faceToFace: localStorage.getItem('maluap-f2f') === '1',
+    myName: localStorage.getItem('maluap-my-name') || '',
+    keywords: localStorage.getItem('maluap-keywords') || '',
+    showNotice: localStorage.getItem('maluap-show-notice') !== '0',
     ttsPlaying: false,
-    pass: loadJSON('pauma-pass', { name: '', languages: '', emergency: '', notes: '' }),
+    pass: loadJSON('maluap-pass', { name: '', languages: '', emergency: '', notes: '' }),
     presentationActive: false,
     sharedAudioBlob: null,
 
-    speakers: loadJSON('pauma-speakers', {}),
+    speakers: loadJSON('maluap-speakers', {}),
     currentSession: null,
     historyDb: null,
     historySearch: '',
@@ -102,9 +163,9 @@
     lastSegmentEl: null,
     lastSpeaker: null,
 
-    phrases: loadJSON('pauma-phrases', { ...DEFAULT_PHRASES }),
-    activeCategory: localStorage.getItem('pauma-cat') || 'general',
-    recentSpoken: loadJSON('pauma-recent-spoken', []),
+    phrases: loadJSON('maluap-phrases', { ...DEFAULT_PHRASES }),
+    activeCategory: localStorage.getItem('maluap-cat') || 'general',
+    recentSpoken: loadJSON('maluap-recent-spoken', []),
 
     activeSessionDetailId: null,
     swReg: null,
@@ -311,17 +372,61 @@
   // ════════════════════════════════════════════════════════════════
   function openDb() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('pauma', 2);
+      const req = indexedDB.open('maluap', 2);
       req.onupgradeneeded = (e) => {
         const db = req.result;
         if (!db.objectStoreNames.contains('sessions')) {
           const s = db.createObjectStore('sessions', { keyPath: 'id' });
           s.createIndex('started', 'started');
         }
-        // future stores can be added here
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = async () => {
+        try { await migrateLegacyDb(req.result); } catch (_) {}
+        resolve(req.result);
+      };
       req.onerror = () => reject(req.error);
+    });
+  }
+  function migrateLegacyDb(newDb) {
+    return new Promise((resolve) => {
+      if (localStorage.getItem('maluap-db-migrated') === '1') return resolve();
+      try {
+        const req = indexedDB.open('pauma', 2);
+        req.onupgradeneeded = () => req.transaction?.abort?.();
+        req.onerror = () => { localStorage.setItem('maluap-db-migrated', '1'); resolve(); };
+        req.onsuccess = () => {
+          const oldDb = req.result;
+          if (!oldDb.objectStoreNames.contains('sessions')) {
+            oldDb.close();
+            localStorage.setItem('maluap-db-migrated', '1');
+            return resolve();
+          }
+          const oldTx = oldDb.transaction('sessions', 'readonly');
+          const rows = [];
+          oldTx.objectStore('sessions').openCursor().onsuccess = (e) => {
+            const cur = e.target.result;
+            if (cur) { rows.push(cur.value); cur.continue(); }
+            else {
+              if (!rows.length) {
+                oldDb.close();
+                localStorage.setItem('maluap-db-migrated', '1');
+                return resolve();
+              }
+              const tx = newDb.transaction('sessions', 'readwrite');
+              const store = tx.objectStore('sessions');
+              rows.forEach(r => store.put(r));
+              tx.oncomplete = () => {
+                oldDb.close();
+                indexedDB.deleteDatabase('pauma');
+                localStorage.setItem('maluap-db-migrated', '1');
+                console.info('[maluap] migrated ' + rows.length + ' sessions from pauma DB');
+                resolve();
+              };
+              tx.onerror = () => { oldDb.close(); resolve(); };
+            }
+          };
+        };
+      } catch (_) { resolve(); }
     });
   }
   async function dbPutSession(s) {
@@ -529,8 +634,28 @@
       ws.onclose = () => {
         cleanupAudio();
         if (state.listening) {
+          state.reconnectAttempts = (state.reconnectAttempts || 0) + 1;
+          if (state.reconnectAttempts > 3) {
+            setStatus('Sin conexión estable · pasando a modo básico', 'warn');
+            state.reconnectAttempts = 0;
+            stopInternal().then(() => {
+              if (SR) {
+                state.listening = true;
+                el.brandDot.classList.add('listening');
+                el.tabMic.classList.add('listening');
+                try {
+                  state.provider = 'webspeech';
+                  startWebSpeech();
+                  setQuality('basic', 'Modo básico tras fallo de red');
+                  showQuickActions();
+                } catch (_) { stop(); }
+              }
+            });
+            return;
+          }
+          const delay = Math.min(1500 * state.reconnectAttempts, 8000);
           setStatus('Conexión cerrada. Reanudando…', 'warn');
-          setTimeout(() => state.listening && restart(), 1500);
+          setTimeout(() => state.listening && restart(), delay);
         }
       };
     });
@@ -569,6 +694,14 @@
   }
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function postProcessWebSpeech(text) {
+    if (!text) return text;
+    let t = text.trim();
+    t = t.charAt(0).toLocaleUpperCase('es-ES') + t.slice(1);
+    if (!/[.!?…]$/.test(t)) t += '.';
+    t = t.replace(/(^|[.!?]\s+)([a-záéíóúñü])/g, (_, sep, ch) => sep + ch.toLocaleUpperCase('es-ES'));
+    return t;
+  }
   function startWebSpeech() {
     if (!SR) throw new Error('webspeech_unsupported');
     const r = new SR();
@@ -580,7 +713,7 @@
         const res = e.results[i];
         const text = res[0].transcript.trim();
         if (!text) continue;
-        if (res.isFinal) addFinal(text, null);
+        if (res.isFinal) addFinal(postProcessWebSpeech(text), null);
         else interim += (interim ? ' ' : '') + text;
       }
       renderInterim(interim, null);
@@ -618,6 +751,7 @@
     if (cfg?.provider === 'deepgram' && cfg.token) {
       try {
         state.provider = 'deepgram';
+        state.reconnectAttempts = 0;
         await startDeepgram(cfg);
         setStatus('Escuchando · alta calidad · identifica hablantes', 'ok');
         setQuality('high', 'Alta calidad · diarización activa');
@@ -626,17 +760,21 @@
         return;
       } catch (err) {
         console.warn('Deepgram failed, fallback', err);
-        cleanupAudio(); // FIX: limpiar audio context si fallo deepgram antes de fallback
+        cleanupAudio();
       }
     }
     if (SR) {
       try {
         state.provider = 'webspeech';
         startWebSpeech();
-        setStatus('Escuchando · modo básico (sin diarización)', 'warn');
+        setStatus('Escuchando · modo básico (sin identificar hablantes)', 'warn');
         setQuality('basic', 'Modo básico · sin identificar hablantes');
         showQuickActions();
         showTranscribeNotice();
+        if (!localStorage.getItem('maluap-fallback-warned')) {
+          localStorage.setItem('maluap-fallback-warned', '1');
+          setTimeout(() => feedbackToast('Modo básico · calidad estándar del navegador', 'warn'), 1500);
+        }
         return;
       } catch (err) {
         await stopInternal();
@@ -1014,7 +1152,7 @@
     const name = el.renameInput.value.trim().slice(0, 20);
     if (!state.speakers[renameSpeakerIdx]) state.speakers[renameSpeakerIdx] = {};
     state.speakers[renameSpeakerIdx].name = name;
-    saveJSON('pauma-speakers', state.speakers);
+    saveJSON('maluap-speakers', state.speakers);
     document.querySelectorAll('.segment-speaker').forEach(s => {
       if (Number(s.dataset.speaker) === renameSpeakerIdx) s.textContent = speakerLabel(renameSpeakerIdx);
     });
@@ -1086,7 +1224,7 @@
     const t = text.trim();
     if (!t) return;
     state.recentSpoken = [t, ...state.recentSpoken.filter(x => x !== t)].slice(0, 8);
-    saveJSON('pauma-recent-spoken', state.recentSpoken);
+    saveJSON('maluap-recent-spoken', state.recentSpoken);
     renderRecentSpoken();
   }
 
@@ -1103,7 +1241,7 @@
       c.dataset.cat = cat.id;
       c.addEventListener('click', () => {
         state.activeCategory = cat.id;
-        localStorage.setItem('pauma-cat', cat.id);
+        localStorage.setItem('maluap-cat', cat.id);
         renderCategories();
         renderQuickPhrases();
       });
@@ -1126,7 +1264,7 @@
       del.addEventListener('click', (e) => {
         e.stopPropagation();
         state.phrases[state.activeCategory].splice(i, 1);
-        saveJSON('pauma-phrases', state.phrases);
+        saveJSON('maluap-phrases', state.phrases);
         renderQuickPhrases();
       });
       row.appendChild(del);
@@ -1298,7 +1436,7 @@
 
   function sessionToText(session) {
     const lines = [];
-    lines.push(`Pauma · ${session.title?.trim() || fmtDate(session.started)}`);
+    lines.push(`Maluap · ${session.title?.trim() || fmtDate(session.started)}`);
     lines.push('');
     for (const seg of session.segments) {
       const time = new Date(seg.t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -1313,7 +1451,7 @@
     const session = await dbGetSession(state.activeSessionDetailId);
     if (!session) return;
     const text = sessionToText(session);
-    const title = session.title?.trim() || 'Conversación de Pauma';
+    const title = session.title?.trim() || 'Conversación de Maluap';
     if (navigator.share) {
       try { await navigator.share({ title, text }); return; } catch (_) {}
     }
@@ -1329,7 +1467,7 @@
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     const safeName = (session.title?.trim() || fmtDateShort(session.started)).replace(/[^a-zA-Z0-9-_ ]/g, '_');
-    a.download = `pauma-${safeName}.txt`;
+    a.download = `maluap-${safeName}.txt`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   }
@@ -1357,7 +1495,7 @@
     if (known.length === 0) {
       const hint = document.createElement('p');
       hint.className = 'muted';
-      hint.textContent = 'Aún no hay personas guardadas. Aparecerán aquí cuando Pauma las identifique.';
+      hint.textContent = 'Aún no hay personas guardadas. Aparecerán aquí cuando Maluap las identifique.';
       el.speakersList.appendChild(hint);
       return;
     }
@@ -1382,11 +1520,11 @@
       del.addEventListener('click', () => {
         askConfirm({
           title: '¿Borrar esta persona?',
-          message: `Pauma olvidará a "${speakerLabel(idx)}". La volverá a detectar si vuelve a hablar.`,
+          message: `Maluap olvidará a "${speakerLabel(idx)}". La volverá a detectar si vuelve a hablar.`,
           confirmLabel: 'Borrar',
           onConfirm: () => {
             delete state.speakers[idx];
-            saveJSON('pauma-speakers', state.speakers);
+            saveJSON('maluap-speakers', state.speakers);
             renderSpeakersSettings();
             feedbackToast('Persona borrada', 'ok');
           },
@@ -1437,7 +1575,7 @@
       r.checked = r.value === state.lang;
       r.addEventListener('change', () => {
         state.lang = r.value;
-        localStorage.setItem('pauma-lang', state.lang);
+        localStorage.setItem('maluap-lang', state.lang);
         updateLangLabel();
         if (state.listening) restart();
       });
@@ -1446,30 +1584,30 @@
       r.checked = r.value === state.fontSize;
       r.addEventListener('change', () => {
         state.fontSize = r.value;
-        localStorage.setItem('pauma-fontsize', state.fontSize);
+        localStorage.setItem('maluap-fontsize', state.fontSize);
         applyFontSize();
       });
     });
     el.setEmotion.checked = state.showEmotion;
     el.setEmotion.addEventListener('change', () => {
       state.showEmotion = el.setEmotion.checked;
-      localStorage.setItem('pauma-emotion', state.showEmotion ? '1' : '0');
+      localStorage.setItem('maluap-emotion', state.showEmotion ? '1' : '0');
     });
     el.setHistory.checked = state.saveHistory;
     el.setHistory.addEventListener('change', () => {
       state.saveHistory = el.setHistory.checked;
-      localStorage.setItem('pauma-history', state.saveHistory ? '1' : '0');
+      localStorage.setItem('maluap-history', state.saveHistory ? '1' : '0');
     });
     el.setPTT.checked = state.pushToTalk;
     el.setPTT.addEventListener('change', () => {
       state.pushToTalk = el.setPTT.checked;
-      localStorage.setItem('pauma-ptt', state.pushToTalk ? '1' : '0');
+      localStorage.setItem('maluap-ptt', state.pushToTalk ? '1' : '0');
     });
 
     el.setMyName.value = state.myName;
     el.setMyName.addEventListener('change', () => {
       state.myName = el.setMyName.value.trim();
-      localStorage.setItem('pauma-my-name', state.myName);
+      localStorage.setItem('maluap-my-name', state.myName);
     });
 
     el.setKeywords.value = state.keywords;
@@ -1483,14 +1621,14 @@
         .join('\n');
       state.keywords = clean;
       el.setKeywords.value = clean;
-      localStorage.setItem('pauma-keywords', state.keywords);
+      localStorage.setItem('maluap-keywords', state.keywords);
       feedbackToast(clean ? 'Vocabulario guardado' : 'Vocabulario vacío', 'ok');
     });
 
     el.setShowNotice.checked = state.showNotice;
     el.setShowNotice.addEventListener('change', () => {
       state.showNotice = el.setShowNotice.checked;
-      localStorage.setItem('pauma-show-notice', state.showNotice ? '1' : '0');
+      localStorage.setItem('maluap-show-notice', state.showNotice ? '1' : '0');
     });
 
     el.noticeClose.addEventListener('click', () => { el.noticeBanner.hidden = true; });
@@ -1512,7 +1650,7 @@
     const order = ['es-ES', 'ca-ES', 'en-US'];
     const i = order.indexOf(state.lang);
     state.lang = order[(i + 1) % order.length];
-    localStorage.setItem('pauma-lang', state.lang);
+    localStorage.setItem('maluap-lang', state.lang);
     $$('input[name="lang"]').forEach(r => { r.checked = r.value === state.lang; });
     updateLangLabel();
     if (state.listening) restart();
@@ -1524,7 +1662,7 @@
   function openSos() {
     state.sosOrigin = state.view;
     state.sosActive = true;
-    el.sosTranscript.innerHTML = '<span class="muted">Habla cerca del móvil. Pauma transcribirá automáticamente.</span>';
+    el.sosTranscript.innerHTML = '<span class="muted">Habla cerca del móvil. Maluap transcribirá automáticamente.</span>';
     activateView('sos');
     vibrate([60, 40, 60]);
     if (!state.listening) start();
@@ -1563,7 +1701,7 @@
   }
   function finishOnboarding() {
     el.onboarding.hidden = true;
-    localStorage.setItem('pauma-onboarded', '1');
+    localStorage.setItem('maluap-onboarded', '1');
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1601,7 +1739,7 @@
   // PAUMA PASS (tarjeta de identidad sorda)
   // ════════════════════════════════════════════════════════════════
   function renderPassDetails() {
-    el.passName.textContent = state.pass.name || 'Pauma';
+    el.passName.textContent = state.pass.name || 'Maluap';
     el.passLanguages.textContent = state.pass.languages
       ? 'Hablo: ' + state.pass.languages
       : 'Comuníquese por escrito en este móvil';
@@ -1659,7 +1797,7 @@
         emergency: el.passEmergency_input.value.trim().slice(0, 60),
         notes: el.passNotes_input.value.trim().slice(0, 280),
       };
-      saveJSON('pauma-pass', state.pass);
+      saveJSON('maluap-pass', state.pass);
     };
     [el.passName_input, el.passLanguages_input, el.passEmergency_input, el.passNotes_input]
       .forEach(input => input.addEventListener('change', () => {
@@ -1677,6 +1815,29 @@
       closePass();
       openSos();
     });
+
+    const passShareBtn = document.getElementById('passShare');
+    if (passShareBtn) {
+      passShareBtn.addEventListener('click', async () => {
+        const p = state.pass;
+        const lines = [
+          p.name ? p.name : '',
+          'Soy persona sorda.',
+          p.languages ? 'Me comunico en: ' + p.languages : '',
+          p.emergency ? 'Contacto de emergencia: ' + p.emergency : '',
+          p.notes ? p.notes : '',
+          'Comunícate por escrito conmigo.',
+        ].filter(Boolean).join('\n');
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: 'Mi tarjeta · Maluap', text: lines });
+          } else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(lines);
+            feedbackToast('Tarjeta copiada', 'ok');
+          }
+        } catch (_) {}
+      });
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -1747,7 +1908,7 @@
     const params = new URLSearchParams(location.search);
     if (params.get('shared') !== 'audio') return;
     try {
-      const cache = await caches.open('pauma-shared');
+      const cache = await caches.open('maluap-shared');
       const res = await cache.match('/_shared/audio');
       if (!res) return;
       const blob = await res.blob();
@@ -1856,7 +2017,7 @@
     if (params.get('view') === 'speak') activateView('speak');
     if (params.get('view') === 'sos') openSos();
 
-    if (!localStorage.getItem('pauma-onboarded')) startOnboarding();
+    if (!localStorage.getItem('maluap-onboarded')) startOnboarding();
 
     // header
     el.btnLang.addEventListener('click', cycleLang);
@@ -1873,7 +2034,7 @@
       if (txt && txt.trim()) {
         if (!state.phrases[state.activeCategory]) state.phrases[state.activeCategory] = [];
         state.phrases[state.activeCategory].push(txt.trim().slice(0, 200));
-        saveJSON('pauma-phrases', state.phrases);
+        saveJSON('maluap-phrases', state.phrases);
         renderQuickPhrases();
       }
     });
@@ -1944,7 +2105,7 @@
     setupSharedAudio();
     checkSharedAudio();
     // Expose toast for auth.js / other modules
-    window.PaumaToast = feedbackToast;
+    window.MaluapToast = feedbackToast;
     setStatus('Listo · pulsa el micrófono para empezar');
   }
 
@@ -1973,7 +2134,7 @@
   }
   function toggleFaceToFace() {
     state.faceToFace = !state.faceToFace;
-    localStorage.setItem('pauma-f2f', state.faceToFace ? '1' : '0');
+    localStorage.setItem('maluap-f2f', state.faceToFace ? '1' : '0');
     applyFaceToFace();
     feedbackToast(state.faceToFace ? 'Modo cara a cara activo' : 'Modo normal', 'ok');
     vibrate(20);
@@ -2027,7 +2188,7 @@
       exportedAt: new Date().toISOString(),
       localStorage: Object.fromEntries(
         Object.keys(localStorage)
-          .filter(k => k.startsWith('pauma-'))
+          .filter(k => k.startsWith('maluap-'))
           .map(k => [k, localStorage.getItem(k)])
       ),
       sessions: [],
@@ -2035,7 +2196,7 @@
     try { data.sessions = await dbGetSessions(); } catch (_) {}
 
     const json = JSON.stringify(data, null, 2);
-    const filename = `pauma-backup-${new Date().toISOString().slice(0,10)}.json`;
+    const filename = `maluap-backup-${new Date().toISOString().slice(0,10)}.json`;
     const blob = new Blob([json], { type: 'application/json' });
 
     // FIX: si Share API soporta archivos, ofrecer compartir directo
@@ -2046,8 +2207,8 @@
         try {
           await navigator.share({
             files: [file],
-            title: 'Backup de Pauma',
-            text: 'Mis datos de Pauma a fecha de ' + new Date().toLocaleDateString('es-ES'),
+            title: 'Backup de Maluap',
+            text: 'Mis datos de Maluap a fecha de ' + new Date().toLocaleDateString('es-ES'),
           });
           feedbackToast('Backup compartido', 'ok');
           return;
@@ -2085,7 +2246,7 @@
         onConfirm: async () => {
           // localStorage
           if (data.localStorage && typeof data.localStorage === 'object') {
-            Object.keys(localStorage).filter(k => k.startsWith('pauma-')).forEach(k => localStorage.removeItem(k));
+            Object.keys(localStorage).filter(k => k.startsWith('maluap-')).forEach(k => localStorage.removeItem(k));
             for (const [k, v] of Object.entries(data.localStorage)) {
               if (typeof v === 'string') localStorage.setItem(k, v);
             }
@@ -2125,7 +2286,7 @@
   }
 
   function setupTipMic() {
-    if (localStorage.getItem('pauma-first-listen') === '1') return;
+    if (localStorage.getItem('maluap-first-listen') === '1') return;
     // FIX: no mostrar tip si la pagina esta en segundo plano
     setTimeout(() => {
       if (!state.listening && state.view === 'listen' && document.visibilityState === 'visible') {
@@ -2135,7 +2296,7 @@
     }, 4000);
     el.tabMic.addEventListener('click', () => {
       el.tipMic.hidden = true;
-      localStorage.setItem('pauma-first-listen', '1');
+      localStorage.setItem('maluap-first-listen', '1');
     }, { once: true });
   }
 
@@ -2196,7 +2357,7 @@
         window.navigator.standalone === true) {
       return;
     }
-    if (localStorage.getItem('pauma-install-dismissed') === '1') return;
+    if (localStorage.getItem('maluap-install-dismissed') === '1') return;
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -2217,13 +2378,13 @@
     });
     el.installDismiss.addEventListener('click', () => {
       el.installBanner.hidden = true;
-      localStorage.setItem('pauma-install-dismissed', '1');
+      localStorage.setItem('maluap-install-dismissed', '1');
     });
 
     window.addEventListener('appinstalled', () => {
       el.installBanner.hidden = true;
       deferredInstallPrompt = null;
-      setStatus('Pauma instalada · listo', 'ok');
+      setStatus('Maluap instalada · listo', 'ok');
       vibrate([40, 40, 80]);
     });
   }

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 spl_autoload_register(function (string $class): void {
-    if (!str_starts_with($class, 'Pauma\\')) {
+    if (!str_starts_with($class, 'Maluap\\')) {
         return;
     }
     $path = __DIR__ . '/' . str_replace('\\', '/', $class) . '.php';
@@ -11,4 +11,4 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-Pauma\Config::boot(dirname(__DIR__) . '/.env');
+Maluap\Config::boot(dirname(__DIR__) . '/.env');

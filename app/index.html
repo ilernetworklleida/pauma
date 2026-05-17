@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <title>Pauma · Transcripción en vivo</title>
+  <title>Maluap · Transcripción en vivo</title>
   <meta name="description" content="Transcripción en vivo con identificación de hablantes y tono emocional, para personas sordas.">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="noindex, follow">
@@ -22,13 +22,13 @@
   <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-12-13-pro-max.png">
   <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-14-15.png">
 
-  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/style.css?v=13">
 </head>
 <body class="app">
 
   <!-- ───────── UPDATE TOAST ───────── -->
   <div class="toast" id="updateToast" hidden role="status">
-    <span>Hay una versión nueva de Pauma.</span>
+    <span>Hay una versión nueva de Maluap.</span>
     <button class="btn-text-sm" id="btnUpdate" type="button">Actualizar</button>
   </div>
 
@@ -42,7 +42,7 @@
       <line x1="12" y1="8" x2="12" y2="12"></line>
       <line x1="12" y1="16" x2="12.01" y2="16"></line>
     </svg>
-    <span>Pauma está transcribiendo. El audio se procesa y se descarta.</span>
+    <span>Maluap está transcribiendo. El audio se procesa y se descarta.</span>
     <button class="notice-close" id="noticeClose" type="button" aria-label="Ocultar aviso">×</button>
   </div>
 
@@ -56,7 +56,7 @@
       </svg>
     </div>
     <div class="install-banner-text">
-      <strong>Añade Pauma a tu pantalla</strong>
+      <strong>Añade Maluap a tu pantalla</strong>
       <span>Para tenerla a un toque, como una app.</span>
     </div>
     <button class="btn-text-sm" id="installAccept" type="button">Instalar</button>
@@ -74,8 +74,8 @@
           <line x1="36" y1="84" x2="64" y2="84"/>
         </svg>
       </div>
-      <h2>Te damos la bienvenida a Pauma</h2>
-      <p>Pauma trae a tu pantalla lo que se dice cerca, para que sigas la conversación sin esfuerzo.</p>
+      <h2>Te damos la bienvenida a Maluap</h2>
+      <p>Maluap trae a tu pantalla lo que se dice cerca, para que sigas la conversación sin esfuerzo.</p>
     </div>
     <div class="ob-slide" data-slide="1" hidden>
       <div class="ob-art" aria-hidden="true">
@@ -86,7 +86,7 @@
         </svg>
       </div>
       <h2>Identifica quién habla</h2>
-      <p>Cada persona aparece con su color. Toca la etiqueta y ponle su nombre. Pauma lo recordará.</p>
+      <p>Cada persona aparece con su color. Toca la etiqueta y ponle su nombre. Maluap lo recordará.</p>
     </div>
     <div class="ob-slide" data-slide="2" hidden>
       <div class="ob-art" aria-hidden="true">
@@ -96,7 +96,7 @@
         </svg>
       </div>
       <h2>Habla tú también</h2>
-      <p>Si prefieres no oralizar, escribe en «Yo hablo» y Pauma lo dirá con una voz natural.</p>
+      <p>Si prefieres no oralizar, escribe en «Yo hablo» y Maluap lo dirá con una voz natural.</p>
     </div>
     <div class="ob-slide" data-slide="3" hidden>
       <div class="ob-art" aria-hidden="true" style="background:rgba(239,68,68,.15)">
@@ -122,9 +122,9 @@
 
   <!-- ───────── HEADER ───────── -->
   <header class="app-header">
-    <a href="/" class="brand" aria-label="Pauma, inicio">
+    <a href="/" class="brand" aria-label="Maluap, inicio">
       <span class="brand-dot" id="brand-dot" aria-hidden="true"></span>
-      Pauma
+      Maluap
       <span class="quality-dot" id="qualityDot" aria-label="Calidad de transcripción" title=""></span>
     </a>
     <div class="app-controls">
@@ -203,7 +203,7 @@
           </svg>
         </div>
         <p class="welcome-title">Toca el micrófono para empezar</p>
-        <p class="welcome-sub">Pauma traerá a tu pantalla lo que se diga cerca, con un color por persona.</p>
+        <p class="welcome-sub">Maluap traerá a tu pantalla lo que se diga cerca, con un color por persona.</p>
         <p class="welcome-hint">La pantalla no se apagará mientras esté activa.</p>
       </div>
     </div>
@@ -350,7 +350,7 @@
           <h3>Personas</h3>
         </div>
         <div id="speakersList" class="speakers-list"></div>
-        <p class="setting-hint">Renómbralas y Pauma las recordará en próximas sesiones.</p>
+        <p class="setting-hint">Renómbralas y Maluap las recordará en próximas sesiones.</p>
       </section>
 
       <section class="setting-group">
@@ -361,7 +361,7 @@
           <h3>Te llaman por tu nombre</h3>
         </div>
         <input type="text" class="text-input" id="setMyName" maxlength="40" placeholder="Ej. María, hermana, mamá...">
-        <p class="setting-hint">Cuando alguien diga esta palabra, Pauma vibrará y la resaltará. Puedes poner varios separados por coma.</p>
+        <p class="setting-hint">Cuando alguien diga esta palabra, Maluap vibrará y la resaltará. Puedes poner varios separados por coma.</p>
       </section>
 
       <section class="setting-group">
@@ -372,7 +372,7 @@
           <h3>Palabras importantes</h3>
         </div>
         <textarea class="text-input" id="setKeywords" rows="3" maxlength="500" placeholder="Una palabra o expresión por línea. Ej. nombres de familia, motes, jergas..."></textarea>
-        <p class="setting-hint">Palabras o expresiones que Pauma debería reconocer mejor. Útil para motes familiares, nombres propios, jerga del trabajo, palabras médicas...</p>
+        <p class="setting-hint">Palabras o expresiones que Maluap debería reconocer mejor. Útil para motes familiares, nombres propios, jerga del trabajo, palabras médicas...</p>
       </section>
 
       <section class="setting-group">
@@ -398,7 +398,7 @@
           <h3>Modo presentación</h3>
         </div>
         <button class="btn-text" id="btnPresentation" type="button" style="width: 100%">Abrir modo presentación</button>
-        <p class="setting-hint">Pantalla con texto enorme para cuando tú hables (charla, clase, reunión). Pauma muestra tu voz transcrita en letra grande para que tu audiencia te lea.</p>
+        <p class="setting-hint">Pantalla con texto enorme para cuando tú hables (charla, clase, reunión). Maluap muestra tu voz transcrita en letra grande para que tu audiencia te lea.</p>
       </section>
 
       <section class="setting-group">
@@ -411,9 +411,9 @@
         <label class="toggle">
           <input type="checkbox" id="setShowNotice" checked>
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          <span class="toggle-label">Mostrar aviso "Pauma está transcribiendo" al empezar a escuchar.</span>
+          <span class="toggle-label">Mostrar aviso "Maluap está transcribiendo" al empezar a escuchar.</span>
         </label>
-        <p class="setting-hint">Por respeto a la persona con la que hablas, Pauma muestra brevemente que está transcribiendo. Puedes desactivarlo si te incomoda.</p>
+        <p class="setting-hint">Por respeto a la persona con la que hablas, Maluap muestra brevemente que está transcribiendo. Puedes desactivarlo si te incomoda.</p>
       </section>
 
       <section class="setting-group">
@@ -461,9 +461,9 @@
           <span class="setting-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </span>
-          <h3>Sobre Pauma</h3>
+          <h3>Sobre Maluap</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.11 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.13 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
@@ -483,7 +483,7 @@
         <section class="sos-them" aria-label="Lo que dice la otra persona">
           <div class="sos-section-title">Tú dices:</div>
           <div class="sos-text" id="sosTranscript">
-            <span class="muted">Habla cerca del móvil. Pauma transcribirá automáticamente.</span>
+            <span class="muted">Habla cerca del móvil. Maluap transcribirá automáticamente.</span>
           </div>
         </section>
         <section class="sos-me" aria-label="Lo que quiero decir">
@@ -510,7 +510,8 @@
         <div class="pass-details" id="passDetails"></div>
         <div class="pass-footer">
           <p>Pulse el botón grande para escribir.</p>
-          <button class="btn btn-primary btn-large" id="passWrite" type="button">Abrir Pauma para escribir</button>
+          <button class="btn btn-primary btn-large" id="passWrite" type="button">Abrir Maluap para escribir</button>
+          <button class="btn-text" id="passShare" type="button" style="margin-top: var(--s-2); width: 100%">Compartir mi tarjeta</button>
         </div>
       </div>
     </div>
@@ -536,7 +537,7 @@
   <div class="modal" id="sharedAudioModal" hidden role="dialog">
     <div class="modal-card" style="max-width: 520px">
       <h3>Transcribir audio compartido</h3>
-      <p class="muted" style="margin-bottom: var(--s-4)">Has compartido un audio con Pauma. Pulsa transcribir para procesarlo.</p>
+      <p class="muted" style="margin-bottom: var(--s-4)">Has compartido un audio con Maluap. Pulsa transcribir para procesarlo.</p>
       <audio id="sharedAudioPreview" controls style="width:100%; margin-bottom: var(--s-4)"></audio>
       <div id="sharedAudioResult" style="margin-bottom: var(--s-4); max-height: 280px; overflow-y: auto;"></div>
       <div class="modal-actions">
@@ -641,7 +642,7 @@
     </div>
   </div>
 
-  <script src="/assets/js/app.js" defer></script>
-  <script src="/assets/js/auth.js" defer></script>
+  <script src="/assets/js/app.js?v=13" defer></script>
+  <script src="/assets/js/auth.js?v=13" defer></script>
 </body>
 </html>

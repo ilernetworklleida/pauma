@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-use Pauma\Config;
-use Pauma\RateLimiter;
-use Pauma\Deepgram;
+use Maluap\Config;
+use Maluap\RateLimiter;
+use Maluap\Deepgram;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -60,7 +60,7 @@ if ($provider === 'deepgram') {
             $keyId = $temp['key_id'];
             $expiresAt = $temp['expires_at'];
         } catch (\Throwable $e) {
-            error_log('[pauma] deepgram temp key failed: ' . $e->getMessage());
+            error_log('[maluap] deepgram temp key failed: ' . $e->getMessage());
             // fallback: use root key (less ideal, but at least functional)
         }
     }
@@ -71,6 +71,9 @@ if ($provider === 'deepgram') {
         'diarize' => 'true',
         'punctuate' => 'true',
         'smart_format' => 'true',
+        'numerals' => 'true',
+        'profanity_filter' => 'false',
+        'filler_words' => 'false',
         'interim_results' => 'true',
         'utterances' => 'true',
         'utterance_end_ms' => '1000',

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Pauma;
+namespace Maluap;
 
 /**
  * Cliente SMTP minimalista sin dependencias.
@@ -16,7 +16,7 @@ final class Mailer
         private string $user,
         private string $pass,
         private string $from,
-        private string $fromName = 'Pauma',
+        private string $fromName = 'Maluap',
     ) {}
 
     public static function fromConfig(): self
@@ -27,7 +27,7 @@ final class Mailer
             user: Config::get('SMTP_USER', ''),
             pass: Config::get('SMTP_PASS', ''),
             from: Config::get('SMTP_FROM', Config::get('SMTP_USER', '')),
-            fromName: Config::get('SMTP_FROM_NAME', 'Pauma'),
+            fromName: Config::get('SMTP_FROM_NAME', 'Maluap'),
         );
     }
 
@@ -74,7 +74,7 @@ final class Mailer
             $this->cmd($sock, 'RCPT TO:<' . $to . '>', [250, 251]);
             $this->cmd($sock, 'DATA', 354);
 
-            $boundary = 'pauma-' . bin2hex(random_bytes(8));
+            $boundary = 'maluap-' . bin2hex(random_bytes(8));
             $messageId = bin2hex(random_bytes(12)) . '@maluap.es';
 
             $headers = [

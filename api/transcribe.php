@@ -17,5 +17,5 @@ header('Cache-Control: no-store');
 http_response_code(501);
 echo json_encode([
     'error' => 'not_implemented',
-    'message' => 'Pauma v0.1 transcribe en cliente con Web Speech API. Endpoint reservado para v0.2.',
+    'message' => 'Maluap v0.1 transcribe en cliente con Web Speech API. Endpoint reservado para v0.2.',
 ], JSON_UNESCAPED_UNICODE);

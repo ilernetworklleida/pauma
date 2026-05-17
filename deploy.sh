@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy.sh — pauma
+# deploy.sh — maluap
 # Dominio destino: maluap.es
 set -euo pipefail
 

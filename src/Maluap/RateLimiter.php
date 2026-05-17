@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Pauma;
+namespace Maluap;
 
 final class RateLimiter
 {
@@ -9,7 +9,7 @@ final class RateLimiter
 
     public function __construct(?string $dir = null)
     {
-        $this->dir = $dir ?? sys_get_temp_dir() . '/pauma-rl';
+        $this->dir = $dir ?? sys_get_temp_dir() . '/maluap-rl';
         if (!is_dir($this->dir)) {
             @mkdir($this->dir, 0700, true);
         }
