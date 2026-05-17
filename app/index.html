@@ -371,6 +371,32 @@
       <section class="setting-group">
         <div class="setting-group-head">
           <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M8 18v2"/><path d="M16 18v2"/></svg>
+          </span>
+          <h3>Mi tarjeta de identidad sorda</h3>
+        </div>
+        <input type="text" class="text-input" id="passName_input" maxlength="40" placeholder="Tu nombre">
+        <input type="text" class="text-input" id="passLanguages_input" maxlength="80" placeholder="Idiomas que conoces (ej. Español, LSE, lectura labial)" style="margin-top: var(--s-2)">
+        <input type="text" class="text-input" id="passEmergency_input" maxlength="60" placeholder="Contacto de emergencia (nombre + teléfono)" style="margin-top: var(--s-2)">
+        <textarea class="text-input" id="passNotes_input" maxlength="280" rows="2" placeholder="Otra información útil (alergias, medicación, instrucciones)" style="margin-top: var(--s-2)"></textarea>
+        <button class="btn-text" id="btnOpenPass" type="button" style="margin-top: var(--s-3); width: 100%">Ver mi tarjeta</button>
+        <p class="setting-hint">Una pantalla diseñada para mostrar rápido a desconocidos en situaciones imprevistas (urgencias, mostradores, transporte). Todo se guarda solo en este móvil.</p>
+      </section>
+
+      <section class="setting-group">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="2 12 12 5 22 12 12 19 2 12"/></svg>
+          </span>
+          <h3>Modo presentación</h3>
+        </div>
+        <button class="btn-text" id="btnPresentation" type="button" style="width: 100%">Abrir modo presentación</button>
+        <p class="setting-hint">Pantalla con texto enorme para cuando tú hables (charla, clase, reunión). Pauma muestra tu voz transcrita en letra grande para que tu audiencia te lea.</p>
+      </section>
+
+      <section class="setting-group">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </span>
           <h3>Aviso de transcripción</h3>
@@ -416,7 +442,7 @@
           </span>
           <h3>Sobre Pauma</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.9 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.10 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
@@ -427,7 +453,10 @@
     <div class="sos-wrap">
       <div class="sos-header">
         <h2>Soy persona sorda.<br>Comuniquémonos aquí.</h2>
-        <button class="btn-text" id="btnSosClose" type="button" aria-label="Cerrar modo SOS">Cerrar</button>
+        <div class="sos-header-actions">
+          <button class="btn-text-sm" id="btnShowPass" type="button" aria-label="Mostrar mi tarjeta de identidad sorda">Mi tarjeta</button>
+          <button class="btn-text" id="btnSosClose" type="button" aria-label="Cerrar modo SOS">Cerrar</button>
+        </div>
       </div>
       <div class="sos-split">
         <section class="sos-them" aria-label="Lo que dice la otra persona">
@@ -446,6 +475,55 @@
       </div>
     </div>
   </main>
+
+  <!-- PAUMA PASS (tarjeta de identidad sorda) -->
+  <main class="view view-pass" id="viewPass" data-view="pass" hidden>
+    <div class="pass-wrap" id="passContent">
+      <button class="btn-text-sm pass-close" id="passClose" type="button" aria-label="Cerrar tarjeta">← Volver</button>
+      <div class="pass-card">
+        <div class="pass-hero">
+          <p class="pass-name" id="passName">—</p>
+          <p class="pass-tagline">Soy persona sorda</p>
+          <p class="pass-tagline-2" id="passLanguages">Comuníquese por escrito en este móvil</p>
+        </div>
+        <div class="pass-details" id="passDetails"></div>
+        <div class="pass-footer">
+          <p>Pulse el botón grande para escribir.</p>
+          <button class="btn btn-primary btn-large" id="passWrite" type="button">Abrir Pauma para escribir</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODO PRESENTACIÓN (texto enorme cuando ella habla a otros) -->
+  <div class="presentation" id="presentation" hidden>
+    <button class="presentation-close" id="presClose" type="button" aria-label="Salir del modo presentación">×</button>
+    <div class="presentation-text" id="presText" aria-live="polite">
+      <span class="muted">Habla. Tu voz aparecerá aquí en grande para que todos te lean.</span>
+    </div>
+    <button class="presentation-toggle-mic" id="presToggleMic" type="button" aria-label="Empezar a hablar">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        <line x1="12" y1="19" x2="12" y2="22"></line>
+        <line x1="8" y1="22" x2="16" y2="22"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- AUDIO COMPARTIDO (cuando llega un audio por share_target) -->
+  <div class="modal" id="sharedAudioModal" hidden role="dialog">
+    <div class="modal-card" style="max-width: 520px">
+      <h3>Transcribir audio compartido</h3>
+      <p class="muted" style="margin-bottom: var(--s-4)">Has compartido un audio con Pauma. Pulsa transcribir para procesarlo.</p>
+      <audio id="sharedAudioPreview" controls style="width:100%; margin-bottom: var(--s-4)"></audio>
+      <div id="sharedAudioResult" style="margin-bottom: var(--s-4); max-height: 280px; overflow-y: auto;"></div>
+      <div class="modal-actions">
+        <button class="btn-text" id="sharedAudioCancel" type="button">Cerrar</button>
+        <button class="btn btn-primary" id="sharedAudioTranscribe" type="button">Transcribir</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══════════ TABBAR ═══════════ -->
   <nav class="tabbar" aria-label="Navegación principal">

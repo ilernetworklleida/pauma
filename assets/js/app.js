@@ -10,7 +10,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.9';
+  const VERSION = 'v0.10';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -89,6 +89,9 @@
     keywords: localStorage.getItem('pauma-keywords') || '',
     showNotice: localStorage.getItem('pauma-show-notice') !== '0',
     ttsPlaying: false,
+    pass: loadJSON('pauma-pass', { name: '', languages: '', emergency: '', notes: '' }),
+    presentationActive: false,
+    sharedAudioBlob: null,
 
     speakers: loadJSON('pauma-speakers', {}),
     currentSession: null,
@@ -205,6 +208,32 @@
     renameInput: $('#renameInput'),
     renameCancel: $('#renameCancel'),
     renameSave: $('#renameSave'),
+
+    btnShowPass: $('#btnShowPass'),
+    passContent: $('#passContent'),
+    passName: $('#passName'),
+    passLanguages: $('#passLanguages'),
+    passDetails: $('#passDetails'),
+    passClose: $('#passClose'),
+    passWrite: $('#passWrite'),
+
+    passName_input: $('#passName_input'),
+    passLanguages_input: $('#passLanguages_input'),
+    passEmergency_input: $('#passEmergency_input'),
+    passNotes_input: $('#passNotes_input'),
+    btnOpenPass: $('#btnOpenPass'),
+    btnPresentation: $('#btnPresentation'),
+
+    presentation: $('#presentation'),
+    presText: $('#presText'),
+    presToggleMic: $('#presToggleMic'),
+    presClose: $('#presClose'),
+
+    sharedAudioModal: $('#sharedAudioModal'),
+    sharedAudioPreview: $('#sharedAudioPreview'),
+    sharedAudioResult: $('#sharedAudioResult'),
+    sharedAudioCancel: $('#sharedAudioCancel'),
+    sharedAudioTranscribe: $('#sharedAudioTranscribe'),
 
     sheet: $('#sheetSession'),
     sheetBack: $('#sheetBack'),
@@ -847,6 +876,10 @@
   }
 
   function renderInterim(text, speakerIdx) {
+    if (state.presentationActive) {
+      appendToPresentation(text, false);
+      return;
+    }
     const container = state.sosActive ? el.sosTranscript : el.transcript;
     if (!text) {
       if (state.interimEl) { state.interimEl.remove(); state.interimEl = null; }
@@ -869,6 +902,17 @@
     const nameMatch = detectName(text);
     const time = nowHM();
     const speaker = speakerIdx != null ? Number(speakerIdx) : null;
+
+    // hook al modo presentación: muestra texto enorme
+    if (state.presentationActive) {
+      appendToPresentation(text, true);
+      // tambien añadimos a sesion historica
+      if (state.currentSession) {
+        state.currentSession.segments.push({ t: Date.now(), speaker, text, emotion });
+        if (state.currentSession.segments.length % 5 === 0) persistCurrentSession();
+      }
+      return;
+    }
 
     if (state.sosActive) {
       const span = document.createElement('span');
@@ -1543,6 +1587,239 @@
   }
 
   // ════════════════════════════════════════════════════════════════
+  // PAUMA PASS (tarjeta de identidad sorda)
+  // ════════════════════════════════════════════════════════════════
+  function renderPassDetails() {
+    el.passName.textContent = state.pass.name || 'Pauma';
+    el.passLanguages.textContent = state.pass.languages
+      ? 'Hablo: ' + state.pass.languages
+      : 'Comuníquese por escrito en este móvil';
+
+    el.passDetails.innerHTML = '';
+    const fields = [
+      { label: 'Contacto de emergencia', value: state.pass.emergency },
+      { label: 'Información útil', value: state.pass.notes },
+    ];
+    let hasContent = false;
+    for (const f of fields) {
+      if (!f.value || !f.value.trim()) continue;
+      hasContent = true;
+      const row = document.createElement('div');
+      row.className = 'pass-detail-row';
+      const lbl = document.createElement('span');
+      lbl.className = 'pass-detail-label';
+      lbl.textContent = f.label;
+      const val = document.createElement('span');
+      val.className = 'pass-detail-value';
+      val.textContent = f.value;
+      row.appendChild(lbl); row.appendChild(val);
+      el.passDetails.appendChild(row);
+    }
+    if (!hasContent) {
+      const hint = document.createElement('p');
+      hint.className = 'muted';
+      hint.style.fontSize = 'var(--fs-sm)';
+      hint.style.textAlign = 'center';
+      hint.textContent = 'Configura tu tarjeta en Ajustes para añadir contacto de emergencia e info útil.';
+      el.passDetails.appendChild(hint);
+    }
+  }
+
+  function openPass() {
+    renderPassDetails();
+    activateView('pass');
+    requestWakeLock();
+  }
+  function closePass() {
+    activateView('listen');
+  }
+
+  function setupPass() {
+    // entradas en ajustes
+    el.passName_input.value = state.pass.name || '';
+    el.passLanguages_input.value = state.pass.languages || '';
+    el.passEmergency_input.value = state.pass.emergency || '';
+    el.passNotes_input.value = state.pass.notes || '';
+
+    const savePass = () => {
+      state.pass = {
+        name: el.passName_input.value.trim().slice(0, 40),
+        languages: el.passLanguages_input.value.trim().slice(0, 80),
+        emergency: el.passEmergency_input.value.trim().slice(0, 60),
+        notes: el.passNotes_input.value.trim().slice(0, 280),
+      };
+      saveJSON('pauma-pass', state.pass);
+    };
+    [el.passName_input, el.passLanguages_input, el.passEmergency_input, el.passNotes_input]
+      .forEach(input => input.addEventListener('change', () => {
+        savePass();
+        feedbackToast('Tarjeta guardada', 'ok');
+      }));
+
+    el.btnOpenPass.addEventListener('click', openPass);
+    el.btnShowPass.addEventListener('click', () => {
+      closeSos();
+      openPass();
+    });
+    el.passClose.addEventListener('click', closePass);
+    el.passWrite.addEventListener('click', () => {
+      closePass();
+      openSos();
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // MODO PRESENTACIÓN (ella habla -> audiencia lee texto grande)
+  // ════════════════════════════════════════════════════════════════
+  function openPresentation() {
+    state.presentationActive = true;
+    el.presentation.hidden = false;
+    el.presText.innerHTML = '<span class="muted">Habla. Tu voz aparecerá aquí en grande para que todos te lean.</span>';
+    requestWakeLock();
+  }
+  function closePresentation() {
+    state.presentationActive = false;
+    el.presentation.hidden = true;
+    if (state.listening) stop();
+  }
+  function presentationToggleMic() {
+    if (state.listening) {
+      stop();
+      el.presToggleMic.classList.remove('listening');
+    } else {
+      // empezar pero NO en vista listen
+      startInPresentationMode();
+    }
+  }
+  async function startInPresentationMode() {
+    el.presToggleMic.classList.add('listening');
+    el.presText.innerHTML = '<span class="muted">Escuchando…</span>';
+    await start();
+  }
+
+  // Hook en addFinal y renderInterim para volcar a presentation si activa
+  function appendToPresentation(text, isFinal) {
+    if (!state.presentationActive) return;
+    const muted = el.presText.querySelector('.muted');
+    if (muted) muted.remove();
+    if (isFinal) {
+      const p = document.createElement('p');
+      p.textContent = text;
+      // limitar a 3 frases finales visibles
+      el.presText.innerHTML = '';
+      el.presText.appendChild(p);
+    } else {
+      const interim = el.presText.querySelector('p.interim');
+      if (interim) {
+        interim.textContent = text;
+      } else {
+        const p = document.createElement('p');
+        p.className = 'interim';
+        p.style.opacity = '0.6';
+        p.textContent = text;
+        el.presText.innerHTML = '';
+        el.presText.appendChild(p);
+      }
+    }
+  }
+
+  function setupPresentation() {
+    el.btnPresentation.addEventListener('click', openPresentation);
+    el.presClose.addEventListener('click', closePresentation);
+    el.presToggleMic.addEventListener('click', presentationToggleMic);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // AUDIO COMPARTIDO (share_target desde otras apps)
+  // ════════════════════════════════════════════════════════════════
+  async function checkSharedAudio() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('shared') !== 'audio') return;
+    try {
+      const cache = await caches.open('pauma-shared');
+      const res = await cache.match('/_shared/audio');
+      if (!res) return;
+      const blob = await res.blob();
+      await cache.delete('/_shared/audio');
+      // limpiar la query string
+      history.replaceState({}, '', '/app/');
+      state.sharedAudioBlob = blob;
+      el.sharedAudioPreview.src = URL.createObjectURL(blob);
+      el.sharedAudioResult.innerHTML = '';
+      el.sharedAudioModal.hidden = false;
+    } catch (err) {
+      console.warn('shared audio error', err);
+    }
+  }
+
+  async function transcribeSharedAudio() {
+    if (!state.sharedAudioBlob) return;
+    el.sharedAudioTranscribe.disabled = true;
+    el.sharedAudioResult.innerHTML = '<p class="muted"><span class="spinner"></span> Transcribiendo… esto puede tardar unos segundos.</p>';
+    try {
+      const lang = state.lang.startsWith('ca') ? 'ca' : state.lang.startsWith('en') ? 'en' : 'es';
+      const res = await fetch('/api/transcribe-file.php?lang=' + lang, {
+        method: 'POST',
+        headers: { 'Content-Type': state.sharedAudioBlob.type || 'audio/mpeg' },
+        body: state.sharedAudioBlob,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('http_' + res.status);
+      const data = await res.json();
+      renderSharedAudioResult(data);
+    } catch (err) {
+      el.sharedAudioResult.innerHTML = '<p style="color: var(--listening)">No se pudo transcribir el audio. Revisa tu conexión.</p>';
+    } finally {
+      el.sharedAudioTranscribe.disabled = false;
+    }
+  }
+
+  function renderSharedAudioResult(dgData) {
+    const alt = dgData?.results?.channels?.[0]?.alternatives?.[0];
+    const summary = dgData?.results?.summary?.short || dgData?.results?.summary?.result?.summary;
+    const transcript = alt?.transcript || '';
+    if (!transcript) {
+      el.sharedAudioResult.innerHTML = '<p class="muted">No se ha detectado voz en el audio.</p>';
+      return;
+    }
+    const html = [];
+    if (summary) {
+      html.push(`<div class="segment" style="background:var(--accent-soft); border-left-color:var(--accent); margin-bottom:var(--s-3)">
+        <div class="segment-meta"><span class="segment-speaker" style="color:var(--accent)">Resumen</span></div>
+        <span class="segment-text">${escapeHtml(summary)}</span>
+      </div>`);
+    }
+    html.push(`<div class="segment">
+      <div class="segment-meta"><span class="segment-speaker">Transcripción</span></div>
+      <span class="segment-text">${escapeHtml(transcript)}</span>
+    </div>`);
+    html.push(`<div style="margin-top: var(--s-3); display:flex; gap: var(--s-2); flex-wrap: wrap">
+      <button class="btn-text" id="copySharedTranscript" type="button">Copiar texto</button>
+    </div>`);
+    el.sharedAudioResult.innerHTML = html.join('');
+    document.getElementById('copySharedTranscript')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(transcript).then(() => feedbackToast('Copiado', 'ok'));
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function closeSharedAudio() {
+    el.sharedAudioModal.hidden = true;
+    if (state.sharedAudioBlob) {
+      state.sharedAudioBlob = null;
+      try { URL.revokeObjectURL(el.sharedAudioPreview.src); } catch (_) {}
+    }
+  }
+
+  function setupSharedAudio() {
+    el.sharedAudioCancel.addEventListener('click', closeSharedAudio);
+    el.sharedAudioTranscribe.addEventListener('click', transcribeSharedAudio);
+  }
+
+  // ════════════════════════════════════════════════════════════════
   // INIT
   // ════════════════════════════════════════════════════════════════
   function init() {
@@ -1651,6 +1928,10 @@
     setupConfirm();
     setupTranscriptDelegation();
     setupBeforeUnload();
+    setupPass();
+    setupPresentation();
+    setupSharedAudio();
+    checkSharedAudio();
     setStatus('Listo · pulsa el micrófono para empezar');
   }
 
