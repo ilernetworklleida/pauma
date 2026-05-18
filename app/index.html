@@ -22,7 +22,7 @@
   <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-12-13-pro-max.png">
   <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-14-15.png">
 
-  <link rel="stylesheet" href="/assets/css/style.css?v=14">
+  <link rel="stylesheet" href="/assets/css/style.css?v=15">
 </head>
 <body class="app">
 
@@ -358,10 +358,14 @@
           <span class="setting-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
           </span>
-          <h3>Te llaman por tu nombre</h3>
+          <h3>Palabras que te alerten</h3>
         </div>
-        <input type="text" class="text-input" id="setMyName" maxlength="40" placeholder="Ej. María, hermana, mamá...">
-        <p class="setting-hint">Cuando alguien diga esta palabra, Maluap vibrará y la resaltará. Puedes poner varios separados por coma.</p>
+        <input type="text" class="text-input" id="setMyName" maxlength="80" placeholder="Ej. María, hermana, mamá, fuego, ayuda, policía">
+        <p class="setting-hint">
+          Cuando alguien diga cualquiera de estas palabras, Maluap <strong>vibrará fuerte</strong> y la resaltará en la transcripción.
+          Útil para tu nombre, motes familiares y también <strong>palabras de emergencia</strong> (fuego, ayuda, policía, cuidado).
+          Sepáralas con coma.
+        </p>
       </section>
 
       <section class="setting-group">
@@ -402,6 +406,31 @@
           3. (Opcional) <a href="https://elevenlabs.io/app/sign-up" target="_blank" rel="noopener" style="color: var(--accent)">elevenlabs.io/app/sign-up</a> para voz natural · 10k chars/mes gratis
         </p>
         <p id="keysStatus" class="setting-hint" style="margin-top: var(--s-2); font-weight: 600"></p>
+      </section>
+
+      <section class="setting-group" id="ambientSection">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3v5z"/><path d="M3 19a2 2 0 0 0 2 2h1v-7H3v5z"/></svg>
+          </span>
+          <h3>Subtítulos de ambiente</h3>
+        </div>
+        <p class="setting-hint" style="margin-bottom: var(--s-3)">
+          Mientras Maluap escucha, también detecta <strong>sonidos no-hablados</strong>
+          importantes y los muestra en el transcript como en los subtítulos de cine.
+          Detecta: <strong>sirenas, aplausos, música de fondo, alarmas/timbres sostenidos</strong>.
+          Para sirena además vibra (seguridad al caminar/conducir).
+        </p>
+        <label class="toggle">
+          <input type="checkbox" id="setAmbient">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Mostrar "(aplausos)", "(música)", "(sirena)" en el transcript</span>
+        </label>
+        <p class="setting-hint" style="margin-top: var(--s-2); font-size: var(--fs-xs)">
+          Requiere modo de alta calidad (Deepgram). Modo experimental: puede tener
+          falsos positivos con ruidos similares. Risas, llantos y ladridos vendrán
+          en futura versión con modelo de IA dedicado.
+        </p>
       </section>
 
       <section class="setting-group" id="watchSection">
@@ -512,7 +541,7 @@
           </span>
           <h3>Sobre Maluap</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.13 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.14 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
@@ -691,7 +720,7 @@
     </div>
   </div>
 
-  <script src="/assets/js/app.js?v=14" defer></script>
-  <script src="/assets/js/auth.js?v=14" defer></script>
+  <script src="/assets/js/app.js?v=15" defer></script>
+  <script src="/assets/js/auth.js?v=15" defer></script>
 </body>
 </html>

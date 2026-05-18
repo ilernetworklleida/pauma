@@ -1470,6 +1470,34 @@ kbd {
   .tab-mic.listening::after { display: none; }
 }
 
+/* Subtitulos de ambiente: estilo "(aplausos)", "(sirena)" inline */
+.segment.segment-ambient {
+  background: linear-gradient(90deg, rgba(167,139,250,.08), rgba(167,139,250,.02));
+  border-left: 3px solid var(--accent, #a78bfa);
+  padding-left: var(--s-3, 12px);
+  margin: var(--s-2, 8px) 0;
+  font-style: italic;
+  opacity: .92;
+}
+.segment.segment-ambient .segment-text {
+  color: var(--text-dim, #b8b8b8);
+  font-weight: 500;
+  font-size: 0.95em;
+}
+.segment.segment-ambient .segment-time {
+  color: var(--text-faint, #8a8a8a);
+}
+.seg-ambient {
+  display: block;
+  background: rgba(167,139,250,.12);
+  color: var(--text-dim, #b8b8b8);
+  font-style: italic;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin: 6px 0;
+  border-left: 3px solid var(--accent, #a78bfa);
+}
+
 /* Vigilante de sonidos: flash visual cuando detecta sonido fuerte */
 @keyframes maluapFlashAlert {
   0%, 100% { background: var(--bg); }

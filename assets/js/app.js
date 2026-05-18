@@ -32,7 +32,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.13';
+  const VERSION = 'v0.14';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -922,6 +922,7 @@
     if (!bars.length || !state.audioAnalyser) return;
     el.audioViz.classList.add('active', 'listening');
     const data = new Uint8Array(state.audioAnalyser.frequencyBinCount);
+    state.ambient = state.ambient || { history: [], lastEvent: {}, frameCount: 0 };
     const tick = () => {
       if (!state.audioAnalyser) return;
       state.audioAnalyser.getByteFrequencyData(data);
@@ -935,6 +936,14 @@
       });
       const avg = sum / bars.length;
       el.audioViz.classList.toggle('low', avg < 8);
+
+      // Deteccion de eventos ambientales (cada ~6 frames = 100ms)
+      state.ambient.frameCount = (state.ambient.frameCount + 1) % 6;
+      if (state.ambient.frameCount === 0 && localStorage.getItem('maluap-ambient') === '1') {
+        const evt = classifyAmbientSound(data, state.audioAnalyser.context.sampleRate);
+        if (evt) onAmbientEvent(evt);
+      }
+
       state.audioVizRaf = requestAnimationFrame(tick);
     };
     tick();
@@ -943,6 +952,147 @@
     if (state.audioVizRaf) { cancelAnimationFrame(state.audioVizRaf); state.audioVizRaf = null; }
     el.audioViz.classList.remove('active', 'listening', 'low');
     el.audioViz.querySelectorAll('span').forEach(b => b.style.height = '4px');
+    if (state.ambient) { state.ambient.history = []; state.ambient.frameCount = 0; }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // CLASIFICACION HEURISTICA DE SONIDOS AMBIENTALES
+  // (sirena, aplausos, alarma sostenida, musica)
+  // ════════════════════════════════════════════════════════════════
+  function classifyAmbientSound(freq, sampleRate) {
+    const n = freq.length;
+    if (n < 32) return null;
+
+    // Energia total
+    let total = 0;
+    for (let i = 0; i < n; i++) total += freq[i];
+    if (total < 600) return null; // silencio
+
+    // Pico dominante
+    let maxVal = 0, maxBin = 0;
+    for (let i = 0; i < n; i++) {
+      if (freq[i] > maxVal) { maxVal = freq[i]; maxBin = i; }
+    }
+    const peakHz = (maxBin * sampleRate) / (n * 2);
+    const avg = total / n;
+    const peakRatio = maxVal / Math.max(1, avg);
+
+    // Spectral flatness (Wiener entropy): geometric_mean / arithmetic_mean
+    let logSum = 0, count = 0;
+    for (let i = 1; i < n; i++) {
+      if (freq[i] > 0) { logSum += Math.log(freq[i] + 1); count++; }
+    }
+    const geoMean = count ? Math.exp(logSum / count) : 0;
+    const flatness = geoMean / Math.max(1, avg);
+
+    // Centroide espectral (Hz)
+    let weighted = 0, normSum = 0;
+    for (let i = 0; i < n; i++) {
+      weighted += i * freq[i];
+      normSum += freq[i];
+    }
+    const centroidBin = normSum ? weighted / normSum : 0;
+    const centroidHz = (centroidBin * sampleRate) / (n * 2);
+
+    // Guardar historial corto (ultimos ~2s a 10Hz = 20 muestras)
+    const hist = state.ambient.history;
+    hist.push({ peakHz, centroidHz, peakRatio, flatness, total, t: Date.now() });
+    if (hist.length > 25) hist.shift();
+
+    // ── SIREN: centroide en 700-2000Hz oscilando entre 2 valores claros ──
+    if (hist.length >= 15) {
+      const recent = hist.slice(-15);
+      const centroids = recent.map(h => h.centroidHz).filter(c => c > 500 && c < 2500);
+      if (centroids.length >= 12) {
+        const min = Math.min(...centroids);
+        const max = Math.max(...centroids);
+        const range = max - min;
+        const allLoud = recent.every(h => h.total > 1500);
+        if (range > 250 && range < 1500 && allLoud) return 'siren';
+      }
+    }
+
+    // ── APPLAUSE: flatness alta (broadband) + energia alta sostenida ──
+    if (flatness > 0.45 && total > 4000 && peakRatio < 8) {
+      const recent = hist.slice(-8);
+      if (recent.length >= 6 && recent.every(h => h.flatness > 0.4)) return 'applause';
+    }
+
+    // ── ALARMA SOSTENIDA: pico unico dominante muy tonal ──
+    // (microondas, alarma humo, despertador, timbre electronico)
+    if (peakRatio > 18 && peakHz > 400 && peakHz < 4500 && total > 2000) {
+      const recent = hist.slice(-10);
+      if (recent.length >= 8) {
+        const peaksClose = recent.filter(h => Math.abs(h.peakHz - peakHz) < 100);
+        if (peaksClose.length >= 7) return 'alarm';
+      }
+    }
+
+    // ── MUSICA: contenido armonico estable durante varios segundos ──
+    if (hist.length >= 20) {
+      const recent = hist.slice(-20);
+      const stableTotal = recent.every(h => h.total > 1500);
+      const moderateFlatness = recent.every(h => h.flatness > 0.15 && h.flatness < 0.5);
+      const peakVariance = recent.map(h => h.peakHz).reduce((s, p, _, a) => {
+        const m = a.reduce((x, y) => x + y, 0) / a.length;
+        return s + (p - m) * (p - m);
+      }, 0) / 20;
+      if (stableTotal && moderateFlatness && peakVariance > 40000) return 'music';
+    }
+
+    return null;
+  }
+
+  function onAmbientEvent(eventType) {
+    const now = Date.now();
+    const cooldownMs = { siren: 6000, applause: 8000, alarm: 5000, music: 20000 };
+    if (now - (state.ambient.lastEvent[eventType] || 0) < (cooldownMs[eventType] || 8000)) return;
+    state.ambient.lastEvent[eventType] = now;
+
+    const labels = {
+      siren: '🚨 sirena cercana',
+      applause: '👏 aplausos',
+      alarm: '⚠️ alarma · pitido sostenido',
+      music: '🎵 suena música',
+    };
+    const text = labels[eventType] || ('(' + eventType + ')');
+
+    // Vibracion solo para sirena (safety crítica)
+    if (eventType === 'siren') vibrate([180, 80, 180, 80, 180]);
+    if (eventType === 'alarm') vibrate([100, 60, 100]);
+
+    // Insertar como burbuja especial en la transcripcion
+    if (state.sosActive && el.sosTranscript) {
+      const span = document.createElement('div');
+      span.className = 'seg seg-ambient';
+      span.textContent = text;
+      el.sosTranscript.appendChild(span);
+      scrollTranscript(el.sosTranscript);
+    } else if (el.transcript) {
+      const div = document.createElement('div');
+      div.className = 'segment segment-ambient';
+      const meta = document.createElement('div');
+      meta.className = 'segment-meta';
+      const time = document.createElement('span');
+      time.className = 'segment-time';
+      time.textContent = nowHM();
+      meta.appendChild(time);
+      div.appendChild(meta);
+      const body = document.createElement('div');
+      body.className = 'segment-text';
+      body.textContent = text;
+      div.appendChild(body);
+      el.transcript.appendChild(div);
+      scrollTranscript(el.transcript);
+      // Reset para que el siguiente texto humano abra burbuja nueva
+      state.lastSegmentEl = null;
+      state.lastSpeaker = null;
+    }
+
+    // Persistir en sesion
+    if (state.currentSession) {
+      state.currentSession.segments.push({ t: now, speaker: null, text: '[' + eventType + '] ' + text, ambient: true });
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -2172,9 +2322,27 @@
     checkSharedAudio();
     setupApiKeys();
     setupSoundWatch();
+    setupAmbientToggle();
     // Expose toast for auth.js / other modules
     window.MaluapToast = feedbackToast;
     setStatus('Listo · pulsa el micrófono para empezar');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SUBTITULOS DE AMBIENTE: toggle simple
+  // ════════════════════════════════════════════════════════════════
+  function setupAmbientToggle() {
+    const t = document.getElementById('setAmbient');
+    if (!t) return;
+    t.checked = localStorage.getItem('maluap-ambient') === '1';
+    t.addEventListener('change', () => {
+      if (t.checked) {
+        localStorage.setItem('maluap-ambient', '1');
+        feedbackToast('Subtítulos de ambiente activados', 'ok');
+      } else {
+        localStorage.removeItem('maluap-ambient');
+      }
+    });
   }
 
   // ════════════════════════════════════════════════════════════════

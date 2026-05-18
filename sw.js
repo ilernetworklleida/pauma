@@ -1,4 +1,4 @@
-const CACHE = 'maluap-v0-13-2';
+const CACHE = 'maluap-v0-14-0';
 const SHELL = [
   '/',
   '/app/',
