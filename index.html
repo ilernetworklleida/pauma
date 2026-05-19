@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Maluap · Transcripción en vivo para personas sordas</title>
-  <meta name="description" content="Maluap transcribe conversaciones en directo, identifica quién habla y te deja responder con voz natural. Pensada para personas sordas. Gratis y respeta tu privacidad.">
-  <meta name="keywords" content="transcripción en vivo, accesibilidad sordos, subtítulos en directo, lengua de signos, LSE, LSC, sordera, comunicación inclusiva, diarización, identificar hablantes">
+  <title>Maluap · Subtítulos en vivo y comunicación accesible para personas sordas</title>
+  <meta name="description" content="Maluap transcribe lo que se dice cerca, identifica quién habla, detecta sirenas y timbres, y te deja responder con voz natural. Gratis, sin instalar, sin tracking. Pensada con personas sordas en mente.">
+  <meta name="keywords" content="transcripción en vivo, subtítulos directo, accesibilidad sordos, lengua de signos, LSE, sordera, comunicación inclusiva, diarización, identificar hablantes, app para sordos, audífonos, hipoacusia">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://maluap.es/">
@@ -15,8 +15,8 @@
   <link rel="alternate" hreflang="es" href="https://maluap.es/">
   <link rel="alternate" hreflang="x-default" href="https://maluap.es/">
 
-  <meta property="og:title" content="Maluap · Transcripción en vivo para personas sordas">
-  <meta property="og:description" content="Transcribe en directo lo que se dice cerca. Gratis, sin instalar, respeta tu privacidad.">
+  <meta property="og:title" content="Maluap · Subtítulos en vivo y comunicación accesible para personas sordas">
+  <meta property="og:description" content="Transcribe en directo lo que se dice cerca, te avisa de timbres y sirenas, y te deja responder con voz natural. Gratis, sin instalar.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://maluap.es/">
   <meta property="og:image" content="https://maluap.es/assets/icons/og.png">
@@ -25,11 +25,11 @@
   <meta property="og:locale" content="es_ES">
   <meta property="og:site_name" content="Maluap">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Maluap · Transcripción en vivo para personas sordas">
-  <meta name="twitter:description" content="Para que ninguna conversación te deje fuera.">
+  <meta name="twitter:title" content="Maluap · Subtítulos en vivo para personas sordas">
+  <meta name="twitter:description" content="Para que ninguna conversación, ni un timbre, ni una sirena, te dejen fuera.">
   <meta name="twitter:image" content="https://maluap.es/assets/icons/og.png">
 
-  <link rel="stylesheet" href="/assets/css/style.css?v=13">
+  <link rel="stylesheet" href="/assets/css/style.css?v=18">
 
   <script type="application/ld+json">
   {
@@ -40,16 +40,17 @@
         "@id": "https://maluap.es/#app",
         "name": "Maluap",
         "url": "https://maluap.es/",
-        "description": "Transcripción en vivo de conversaciones para personas sordas. Funciona en el navegador, sin instalar, sin enviar audio a servidores externos.",
+        "description": "Asistente de comunicación accesible para personas sordas: transcripción en vivo con identificación de hablantes, detección de sonidos del ambiente (sirenas, timbres, alarmas), modo «yo hablo» con voz natural, SOS con GPS y tarjeta de identidad sorda. Gratis, open source AGPL-3.0.",
         "applicationCategory": "AccessibilityApplication",
         "applicationSubCategory": "Live Captioning",
-        "operatingSystem": "Web (Chrome, Edge)",
-        "browserRequirements": "Chrome o Edge con Web Speech API",
+        "operatingSystem": "Web (Chrome, Edge, Android, Windows, macOS)",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
         "inLanguage": ["es", "ca", "en"],
-        "accessibilityFeature": ["captions", "transcript", "highContrastDisplay", "largePrint"],
+        "accessibilityFeature": ["captions", "transcript", "highContrastDisplay", "largePrint", "alternativeText", "audioDescription"],
         "accessibilityHazard": "none",
-        "isAccessibleForFree": true
+        "isAccessibleForFree": true,
+        "softwareVersion": "0.15.1",
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html"
       },
       {
         "@type": "Organization",
@@ -57,25 +58,25 @@
         "name": "Maluap",
         "url": "https://maluap.es/",
         "logo": "https://maluap.es/assets/icons/icon-512.png",
-        "sameAs": []
+        "sameAs": ["https://github.com/ilernetworklleida/pauma"]
       },
       {
         "@type": "FAQPage",
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "¿Maluap guarda el audio o la conversación?",
+            "name": "¿Cuánto cuesta Maluap?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "El audio se envía cifrado a Deepgram para transcribirlo y no se almacena. La conversación en texto se puede guardar (opcional) en tu propio dispositivo, nunca en un servidor de Maluap."
+              "text": "Es gratis y siempre lo será para uso personal. Para calidad alta (identificación de hablantes, mejor reconocimiento) puedes registrarte gratis en Deepgram, que da $200 de crédito (unas 770 horas de transcripción). Cuando se acabe, otra cuenta o un coste de unos 15€/mes en uso intenso. Maluap no cobra ni gestiona pagos."
             }
           },
           {
             "@type": "Question",
-            "name": "¿Identifica quién habla en una conversación de grupo?",
+            "name": "¿Maluap guarda mi audio o mis conversaciones?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Sí. Maluap identifica hasta 8 voces y las muestra con colores diferentes. Puedes ponerle nombre a cada persona y Maluap lo recordará."
+              "text": "No. El audio se envía cifrado al motor de transcripción (Deepgram) y se descarta. La transcripción en texto se guarda solo en tu dispositivo (IndexedDB) si activas el historial, nunca en un servidor de Maluap. No hay tracking, ni cookies de seguimiento, ni anuncios."
             }
           },
           {
@@ -83,15 +84,23 @@
             "name": "¿En qué dispositivos funciona?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "En cualquier dispositivo con Chrome o Edge: móviles Android, tablets, ordenadores. En iPhone aún no, porque Safari no soporta Web Speech API."
+              "text": "En cualquier móvil, tablet u ordenador con Chrome, Edge, Firefox o navegadores basados en Chromium. Android funciona perfecto. En iPhone funciona en modo básico; el modo alta calidad requiere Chrome. Se puede instalar como PWA en la pantalla de inicio."
             }
           },
           {
             "@type": "Question",
-            "name": "¿Cuánto cuesta?",
+            "name": "¿Identifica quién habla en una conversación de grupo?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Es gratis. Siempre lo será para uso personal. Si en el futuro añadimos funciones avanzadas como llamadas asistidas con IA, lo básico seguirá siendo gratis."
+              "text": "Sí, hasta 8 personas distintas con colores diferentes. Toca la etiqueta de cualquier persona para ponerle un nombre (mamá, profe, jefe) y Maluap la recordará en futuras sesiones. Solo disponible con el motor de alta calidad."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Detecta sonidos que no son palabras, como timbres o sirenas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. El «Vigilante de sonidos» monitoriza ruidos fuertes del entorno (timbre, alarma de humo, llanto, ladrido) y vibra el móvil con un parpadeo en pantalla. Los «Subtítulos de ambiente» reconocen sirenas, aplausos, música y alarmas sostenidas durante una conversación normal."
             }
           },
           {
@@ -99,7 +108,23 @@
             "name": "¿Necesito instalar algo?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Funciona abriendo maluap.es en el navegador. Si quieres, puedes añadirla a la pantalla de inicio como una app."
+              "text": "No. Funciona abriendo maluap.es en cualquier navegador. Si quieres tenerla más a mano, puedes añadirla a la pantalla de inicio como una app (PWA) en 2 toques."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Puedo hablar yo a través de Maluap?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. En «Yo hablo» escribes lo que quieres decir y Maluap lo reproduce con voz natural. Tienes 50+ frases pre-cargadas organizadas por situación (urgencia, médico, compras, transporte, trámites, trabajo) y puedes añadir las tuyas."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Funciona con audio de Zoom, YouTube o WhatsApp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. En el ordenador, el modo «Pantalla / pestaña» captura el audio directamente de la app que estés viendo, con calidad perfecta sin pasar por el micrófono. Útil para reuniones Zoom/Teams/Meet, vídeos sin captions, llamadas en navegador, etc."
             }
           }
         ]
@@ -115,105 +140,432 @@
       Maluap
     </a>
     <nav aria-label="Principal">
-      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#features">Qué hace</a>
+      <a href="#precio">Precio</a>
       <a href="#faq">FAQ</a>
-      <a href="/privacidad.html">Privacidad</a>
     </nav>
   </header>
 
   <main>
-    <section class="hero">
-      <p class="eyebrow">Para personas sordas y sus familias</p>
-      <h1>Que ninguna conversación te deje fuera.</h1>
-      <p class="lead">Maluap transcribe en directo lo que se dice cerca. Ábrela en el móvil o la tablet, colócala en la mesa, y participa.</p>
-      <div class="cta-row">
-        <a href="/app/" class="btn btn-primary">Abrir Maluap</a>
-        <a href="#como-funciona" class="btn btn-ghost">Cómo funciona</a>
+    <!-- ═══════════════════════ HERO ═══════════════════════ -->
+    <section class="hero hero-v2">
+      <div class="hero-content">
+        <p class="eyebrow">Para personas sordas · y quienes queremos entendernos mejor</p>
+        <h1>La conversación que se te escapaba, <span class="accent-text">ahora la lees.</span></h1>
+        <p class="lead">
+          Maluap transcribe en directo lo que se dice cerca, te identifica
+          <strong>quién habla</strong>, te avisa con vibración cuando suena el
+          <strong>timbre</strong>, una <strong>sirena</strong> o tu <strong>nombre</strong>,
+          y te deja responder con <strong>voz natural</strong> si no quieres oralizar.
+        </p>
+        <div class="cta-row">
+          <a href="/app/" class="btn btn-primary btn-large">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="2" width="6" height="12" rx="3"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+            Abrir Maluap ahora
+          </a>
+          <a href="#funciona" class="btn btn-ghost btn-large">Ver cómo me ayuda</a>
+        </div>
+        <ul class="hero-badges" aria-label="Garantías">
+          <li><span class="check" aria-hidden="true">✓</span> 100% gratis para siempre</li>
+          <li><span class="check" aria-hidden="true">✓</span> Sin instalar, sin registro</li>
+          <li><span class="check" aria-hidden="true">✓</span> Audio nunca almacenado</li>
+          <li><span class="check" aria-hidden="true">✓</span> Open source · AGPL-3.0</li>
+        </ul>
       </div>
-      <p class="hero-note">Gratis. Sin registro. El audio no sale de tu dispositivo.</p>
+      <div class="hero-mockup" aria-hidden="true">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="mockup-bar">
+              <span class="mockup-dot"></span>
+              Maluap
+              <span class="mockup-quality" title="Alta calidad">●</span>
+            </div>
+            <div class="mockup-bubble" data-speaker="0">
+              <div class="mockup-meta"><span class="mockup-speaker">Mamá</span><span class="mockup-time">14:32</span></div>
+              <p>¿Vienes a cenar el sábado? He hecho lasaña.</p>
+            </div>
+            <div class="mockup-bubble" data-speaker="1">
+              <div class="mockup-meta"><span class="mockup-speaker">Pablo</span><span class="mockup-time">14:32</span></div>
+              <p>Yo no puedo, tengo partido.</p>
+            </div>
+            <div class="mockup-bubble ambient">🔔 timbre</div>
+            <div class="mockup-bubble" data-speaker="0">
+              <div class="mockup-meta"><span class="mockup-speaker">Mamá</span><span class="mockup-time">14:33</span></div>
+              <p>Será la vecina, voy yo.</p>
+            </div>
+            <div class="mockup-bubble interim">
+              <p>Sara, ¿tú qué dices?<span class="cursor"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="values" aria-label="Por qué Maluap">
-      <article>
-        <h3>Identifica quién habla</h3>
-        <p>En cenas familiares, reuniones o clases. Cada persona aparece con su color. Pónles nombre una vez y Maluap los recuerda.</p>
-      </article>
-      <article>
-        <h3>Habla tú también</h3>
-        <p>Si prefieres no oralizar, escribe en el modo «Yo hablo» y Maluap lo dirá con una voz natural. Guarda tus frases más usadas para responder rápido.</p>
-      </article>
-      <article>
-        <h3>Privada y siempre contigo</h3>
-        <p>Las conversaciones se guardan en tu dispositivo, no en la nube. El historial es solo tuyo, y puedes borrarlo cuando quieras.</p>
-      </article>
+    <!-- ═══════════════════════ PROBLEMA ═══════════════════════ -->
+    <section class="problem">
+      <h2 class="section-title">Lo que cansa cuando no oyes</h2>
+      <p class="section-lead">
+        Las apps de transcripción genéricas piensan en oyentes que quieren tomar notas.
+        Las personas sordas necesitan otra cosa: <strong>seguir el ritmo de una mesa</strong>,
+        <strong>saber cuándo suena el timbre</strong>, <strong>contestar al desconocido</strong>,
+        <strong>llamar al médico</strong> sin tener que pedir un favor.
+      </p>
+      <div class="problem-grid">
+        <article class="problem-card">
+          <div class="problem-icon" aria-hidden="true">🍽️</div>
+          <h3>Cenas y reuniones familiares</h3>
+          <p>Todos hablan a la vez, cambian de tema cada 8 segundos, y para cuando lees los labios de uno, los demás ya han pasado a otra cosa.</p>
+        </article>
+        <article class="problem-card">
+          <div class="problem-icon" aria-hidden="true">🔔</div>
+          <h3>Timbres, alarmas, sirenas</h3>
+          <p>El timbre suena 5 veces y nadie en casa. Una sirena de ambulancia detrás cuando cruzas. El microondas se queda pitando.</p>
+        </article>
+        <article class="problem-card">
+          <div class="problem-icon" aria-hidden="true">🏥</div>
+          <h3>Médicos, bancos, trámites</h3>
+          <p>Te citan por teléfono, hablan rápido, te dan instrucciones que no captas, y pedir que las escriban es repetir cinco veces que eres sorda.</p>
+        </article>
+        <article class="problem-card">
+          <div class="problem-icon" aria-hidden="true">💬</div>
+          <h3>Desconocidos al cruzarse</h3>
+          <p>Un dependiente, un policía, un taxista. Necesitas comunicar rápido sin que la otra persona se incomode ni te trate como un caso especial.</p>
+        </article>
+      </div>
     </section>
 
-    <section id="como-funciona" class="how">
-      <h2>Cómo funciona</h2>
-      <ol class="steps">
+    <!-- ═══════════════════════ SOLUCIÓN / FEATURES ═══════════════════════ -->
+    <section id="features" class="features">
+      <h2 class="section-title">Lo que Maluap hace por ti</h2>
+      <p class="section-lead">
+        Está construida desde la realidad de mi hermana sorda. No es una app de notas con
+        accesibilidad encima. Es una app de <strong>comunicación accesible</strong> de raíz.
+      </p>
+
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="7" r="4"/><circle cx="17" cy="7" r="3" opacity=".7"/>
+              <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>
+              <path d="M16 16h4a3 3 0 0 1 3 3v2" opacity=".7"/>
+            </svg>
+          </div>
+          <h3>Identifica quién habla</h3>
+          <p>Hasta 8 personas con colores diferentes. Pónles un nombre una vez (mamá, profe, jefe) y Maluap lo recuerda para siempre.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </div>
+          <h3>«Yo hablo» con voz natural</h3>
+          <p>Si prefieres no oralizar, escribe lo que quieres decir y Maluap lo dice por ti con voz natural. 50+ frases pre-cargadas por situación.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+          </div>
+          <h3>Vigilante de sonidos</h3>
+          <p>Activa el micrófono en segundo plano. Cuando suena timbre, alarma o llanto, el móvil vibra fuerte y la pantalla parpadea para avisarte.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+              <path d="M21 19a2 2 0 0 1-2 2h-1v-7h3v5z"/>
+              <path d="M3 19a2 2 0 0 0 2 2h1v-7H3v5z"/>
+            </svg>
+          </div>
+          <h3>Subtítulos de ambiente</h3>
+          <p>Como en los subtítulos de cine: muestra «🚨 sirena», «👏 aplausos», «🎵 música», «⚠️ alarma». Para que sepas el contexto, no solo las palabras.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </div>
+          <h3>Audio de Zoom / YouTube / Teams</h3>
+          <p>En el ordenador, Maluap captura el audio de la app que estés viendo. Reunión de trabajo o vídeo sin captions: subtitulados al vuelo.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="14" rx="2"/>
+              <circle cx="12" cy="11" r="3"/>
+              <path d="M8 18v2"/><path d="M16 18v2"/>
+            </svg>
+          </div>
+          <h3>Tarjeta de identidad sorda</h3>
+          <p>Una pantalla con tu nombre, idiomas que conoces, contacto de emergencia e info médica. Lista para enseñar a un desconocido o sanitario.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <h3>SOS con GPS automático</h3>
+          <p>Un botón en modo SOS coge tu ubicación, vibra patrón Morse y abre WhatsApp/SMS con un mensaje listo para tu contacto de emergencia.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+          <h3>Palabras que te alertan</h3>
+          <p>Configura tu nombre, motes, o palabras de emergencia («fuego», «ayuda»). Cuando alguien las dice cerca, el móvil vibra fuerte.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="15" y2="17"/>
+            </svg>
+          </div>
+          <h3>Resumen automático con IA</h3>
+          <p>Las conversaciones largas se pueden agotar. Pulsa «Resumir» al final y Maluap te da los 3 puntos clave: tema, decisiones, próximos pasos.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════ CASOS DE USO ═══════════════════════ -->
+    <section class="scenarios">
+      <h2 class="section-title">Maluap en tu día a día</h2>
+      <div class="scenarios-list">
+        <article class="scenario">
+          <span class="scenario-tag">En la cena familiar</span>
+          <p>Pones el móvil en el centro de la mesa, pulsas el mic, y cada frase aparece grande con el color de quien la dijo. Cuando llaman al timbre, vibra el móvil aunque la app esté detrás de otra.</p>
+        </article>
+        <article class="scenario">
+          <span class="scenario-tag">En la consulta del médico</span>
+          <p>La doctora habla rápido. Maluap reconoce los términos médicos que has metido en «palabras importantes». Al salir, le pides un resumen en 3 puntos: tratamiento, posología, próxima cita.</p>
+        </article>
+        <article class="scenario">
+          <span class="scenario-tag">Reunión de trabajo por Zoom</span>
+          <p>Abres Maluap en el ordenador, eliges «Pantalla / pestaña», compartes el audio del Meet. Los subtítulos llegan con calidad perfecta sin pasar por el micrófono de la sala.</p>
+        </article>
+        <article class="scenario">
+          <span class="scenario-tag">Cruzarte con un desconocido</span>
+          <p>Un policía te pregunta algo en la calle. Activas el modo SOS, le enseñas la pantalla dividida: él habla → tú lees; tú escribes → Maluap lo dice por ti con voz natural.</p>
+        </article>
+        <article class="scenario">
+          <span class="scenario-tag">Caminar por la calle</span>
+          <p>El «Vigilante de sonidos» está activo. Suena una sirena de ambulancia detrás. Maluap detecta la frecuencia característica y te vibra fuerte para que mires.</p>
+        </article>
+        <article class="scenario">
+          <span class="scenario-tag">Una nota de voz de WhatsApp</span>
+          <p>Tu prima te manda un audio de 2 minutos. Lo compartes a Maluap desde el botón «Compartir» de WhatsApp y aparece transcrito y resumido en segundos.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════ CÓMO FUNCIONA ═══════════════════════ -->
+    <section id="funciona" class="how how-v2">
+      <h2 class="section-title">Empezar en 30 segundos</h2>
+      <ol class="steps steps-v2">
         <li>
           <span class="step-num">1</span>
           <h3>Abre maluap.es</h3>
-          <p>En cualquier móvil o tablet Android con Chrome. Permite el acceso al micrófono.</p>
+          <p>Desde cualquier móvil, tablet u ordenador. No hace falta instalar nada ni registrarse.</p>
         </li>
         <li>
           <span class="step-num">2</span>
-          <h3>Coloca el dispositivo cerca</h3>
-          <p>En la mesa, junto al hablante o en la solapa. Pulsa el botón del micrófono.</p>
+          <h3>Permite el micrófono</h3>
+          <p>Maluap pedirá permiso una sola vez. El audio se procesa y se descarta: nunca se almacena en nuestros servidores.</p>
         </li>
         <li>
           <span class="step-num">3</span>
-          <h3>Lee la conversación en vivo</h3>
-          <p>Cada frase aparece en pantalla grande. La pantalla no se apaga mientras Maluap escucha.</p>
+          <h3>(Opcional) pega tu clave Deepgram</h3>
+          <p>Para alta calidad e identificación de hablantes. Regístrate gratis en Deepgram y te dan $200 de crédito (~770 horas). Maluap usa tu clave directamente, no la guardamos.</p>
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          <h3>Pulsa el micrófono y habla</h3>
+          <p>La transcripción empieza al instante. Coloca el móvil donde más cómodo te sea: solapa, mesa, junto al hablante.</p>
         </li>
       </ol>
     </section>
 
+    <!-- ═══════════════════════ PRECIOS ═══════════════════════ -->
+    <section id="precio" class="pricing">
+      <h2 class="section-title">Precios transparentes</h2>
+      <p class="section-lead">Maluap nunca cobra por sí misma. Solo pagas a las APIs externas si quieres calidad alta, y siempre con tu propia cuenta. Esto es lo que cuesta el uso real.</p>
+      <div class="pricing-grid">
+        <article class="price-card">
+          <div class="price-head">
+            <h3>Modo básico</h3>
+            <p class="price-tag">Gratis · siempre</p>
+          </div>
+          <ul class="price-features">
+            <li>✓ Transcripción en directo</li>
+            <li>✓ «Yo hablo» con voz del sistema</li>
+            <li>✓ Vigilante de sonidos</li>
+            <li>✓ SOS con GPS</li>
+            <li>✓ Historial local</li>
+            <li>✓ Modo cara a cara y presentación</li>
+            <li class="muted">— sin identificar hablantes</li>
+            <li class="muted">— calidad estándar del navegador</li>
+          </ul>
+          <p class="price-foot">Usa Web Speech API (motor nativo del navegador). Calidad razonable, gratuito para siempre.</p>
+        </article>
+
+        <article class="price-card price-card-highlight">
+          <div class="price-badge">Recomendado</div>
+          <div class="price-head">
+            <h3>Modo alta calidad</h3>
+            <p class="price-tag">Gratis (~770 h) · luego ≈ 0,26 €/h</p>
+          </div>
+          <ul class="price-features">
+            <li>✓ Todo lo del modo básico</li>
+            <li>✓ Identifica hasta 8 personas</li>
+            <li>✓ Subtítulos de ambiente (sirena, aplauso, alarma)</li>
+            <li>✓ Captura audio Zoom/YouTube/Teams</li>
+            <li>✓ Funciona en iPhone</li>
+            <li>✓ Voz natural ElevenLabs (10k chars/mes gratis)</li>
+            <li>✓ Resumen con GPT-4o-mini (~0,001 €/uso)</li>
+          </ul>
+          <p class="price-foot">Te registras gratis en Deepgram y te dan <strong>$200 de crédito</strong>. Eso son unas 770 horas. Después puedes seguir con otra cuenta gratis o pagar al uso. <strong>Maluap nunca te cobra.</strong></p>
+        </article>
+      </div>
+      <p class="pricing-note">
+        ¿Por qué este modelo? Mantener Maluap libre y sin paywall es nuestro compromiso (lee el <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" target="_blank" rel="noopener">manifiesto</a>).
+        Que tú pongas tu clave de Deepgram significa: cero costes para el proyecto, control total de tus datos, y que Maluap pueda existir para siempre.
+      </p>
+    </section>
+
+    <!-- ═══════════════════════ DIFERENCIACIÓN ═══════════════════════ -->
+    <section class="why-different">
+      <h2 class="section-title">Por qué Maluap es diferente</h2>
+      <div class="why-grid">
+        <div class="why-item">
+          <span class="why-icon" aria-hidden="true">🎯</span>
+          <strong>Diseñada con personas sordas</strong>
+          <p>No por oyentes que «se preocupan». Cada feature responde a una fricción real del día a día.</p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon" aria-hidden="true">🔒</span>
+          <strong>Tu audio nunca se almacena</strong>
+          <p>Se procesa y se descarta. La transcripción vive solo en tu móvil, opcional. Cero tracking, cero cookies de seguimiento.</p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon" aria-hidden="true">💚</span>
+          <strong>Gratis. Para siempre.</strong>
+          <p>El núcleo accesible nunca llevará paywall. Lo prometemos por escrito en AGPL-3.0: si nos vendemos algún día, otra persona puede levantar Maluap en un día.</p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon" aria-hidden="true">🔓</span>
+          <strong>Código abierto auditable</strong>
+          <p>Todo el código está en GitHub bajo licencia AGPL-3.0. Cualquiera puede leer qué hace, copiarlo, mejorarlo.</p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon" aria-hidden="true">🌍</span>
+          <strong>Español, catalán e inglés</strong>
+          <p>La transcripción funciona en los 3 idiomas. La interfaz, por ahora, en español. Aceptamos traducciones por PR.</p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon" aria-hidden="true">📱</span>
+          <strong>Instalable como app (PWA)</strong>
+          <p>Añadir a la pantalla de inicio en 2 toques. Funciona como una app nativa, con icono y todo. Pesa &lt;100 KB.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════ FAQ ═══════════════════════ -->
     <section id="faq" class="faq">
-      <h2>Preguntas frecuentes</h2>
+      <h2 class="section-title">Preguntas frecuentes</h2>
       <details>
         <summary>¿Maluap graba o guarda el audio?</summary>
-        <p>No. El audio se procesa en tu navegador y se descarta al instante. La transcripción solo existe en tu pantalla mientras la app está abierta.</p>
+        <p>No. El audio se procesa en tu navegador y se descarta al instante. Solo la transcripción en texto puede guardarse, y siempre en tu propio dispositivo (IndexedDB), no en un servidor de Maluap.</p>
       </details>
       <details>
         <summary>¿En qué dispositivos funciona?</summary>
-        <p>En cualquier móvil, tablet u ordenador con Chrome o Edge. En iPhone todavía no, porque Safari no soporta la tecnología de reconocimiento que usamos. Trabajamos en una solución alternativa.</p>
+        <p>En cualquier móvil, tablet u ordenador con Chrome, Edge, Firefox o navegadores basados en Chromium. Android funciona perfecto con todas las funciones. En iPhone funciona en modo básico; el modo alta calidad requiere conexión y permiso de micrófono.</p>
+      </details>
+      <details>
+        <summary>¿Cuánto cuesta Maluap?</summary>
+        <p>Maluap es gratis y siempre lo será. Si quieres calidad alta (identificación de hablantes, subtítulos de ambiente, mejor reconocimiento), te registras gratis en Deepgram y te dan $200 de crédito (~770 horas). Después, ~15€/mes en uso intenso o cuenta nueva. Maluap no cobra ni gestiona pagos.</p>
       </details>
       <details>
         <summary>¿Funciona sin internet?</summary>
-        <p>Por ahora necesita conexión, porque el motor de reconocimiento del navegador trabaja en la nube. La transcripción es rápida y no se guarda en sus servidores.</p>
+        <p>Necesita conexión para transcribir, porque los motores de reconocimiento (Deepgram, Web Speech) trabajan en la nube. La app en sí se cachea como PWA y se abre offline, pero sin red no transcribe.</p>
+      </details>
+      <details>
+        <summary>¿Detecta sonidos que no son palabras?</summary>
+        <p>Sí. Hay dos sistemas: el «Vigilante de sonidos» monitoriza ruidos fuertes del entorno (timbre, alarma humo, llanto) y vibra el móvil. Los «Subtítulos de ambiente» reconocen sirenas, aplausos, música y alarmas sostenidas durante una conversación y los muestran como burbujas especiales.</p>
       </details>
       <details>
         <summary>¿Reconoce a varios hablantes?</summary>
-        <p>Sí. Maluap identifica hasta 8 voces distintas y las pinta con colores diferentes. La primera vez que aparece una persona puedes ponerle nombre tocando su etiqueta, y Maluap lo recordará.</p>
+        <p>Sí, hasta 8 personas con colores diferentes. La primera vez que aparece una persona puedes ponerle nombre tocando su etiqueta (mamá, jefe, médico), y Maluap lo recordará. Solo disponible en modo alta calidad.</p>
       </details>
       <details>
         <summary>¿Puedo hablar yo a través de Maluap?</summary>
-        <p>Sí. En el modo «Yo hablo» escribes el texto y Maluap lo lee con una voz natural. Puedes guardar tus frases más usadas para responder rápido.</p>
+        <p>Sí. En el modo «Yo hablo» escribes el texto y Maluap lo lee con una voz natural. Tiene más de 50 frases pre-cargadas organizadas en categorías (urgencia, médico, compras, transporte, trámites, trabajo, casa) y puedes guardar las tuyas.</p>
       </details>
       <details>
         <summary>¿Detecta el tono emocional?</summary>
-        <p>En esta versión, marca de forma sencilla frases con tono claro (alegre, irritado, cariñoso, duda). No es perfecto, pero ayuda a entender el contexto emocional. Puedes desactivarlo en Ajustes.</p>
+        <p>En esta versión, marca de forma sencilla frases con tono claro (alegre, irritado, cariñoso, pregunta). No es perfecto, pero ayuda con el contexto emocional. Puedes desactivarlo en Ajustes.</p>
       </details>
       <details>
         <summary>¿Está pensada solo para personas sordas?</summary>
-        <p>Está pensada para ellas, pero la usa quien quiera: gente con audífonos, personas mayores con pérdida auditiva, hablantes no nativos, oficinas ruidosas, museos.</p>
+        <p>Está pensada para ellas, pero la usa quien quiera: personas con audífonos, gente mayor con pérdida auditiva, hablantes no nativos en una clase, oficinas ruidosas, museos.</p>
       </details>
       <details>
-        <summary>¿Habrá más funciones?</summary>
-        <p>Sí. La hoja de ruta incluye identificación de hablantes, asistente de llamadas telefónicas, detector de sonidos del hogar y resumen de notas de voz.</p>
+        <summary>¿Qué pasa con mis datos si Maluap desaparece?</summary>
+        <p>Todo está en tu dispositivo. Aunque maluap.es desapareciera mañana, tu historial, frases, personas y ajustes seguirían en tu navegador. Puedes exportarlo todo a JSON en cualquier momento. Y como el código es AGPL-3.0, cualquiera puede levantar Maluap en otro dominio en un día.</p>
+      </details>
+      <details>
+        <summary>¿Habrá llamadas telefónicas asistidas?</summary>
+        <p>Es la siguiente frontera. Requiere integración con Twilio + Deepgram + ElevenLabs bidireccional, y unos costes operativos mensuales fijos. Está en la hoja de ruta como v0.16+. Si tu organización quiere financiarla, escríbenos.</p>
       </details>
     </section>
 
-    <section class="cta-final">
-      <h2>Pruébala ahora</h2>
-      <p>No requiere registro ni descarga. Solo abre Maluap y permite el micrófono.</p>
-      <a href="/app/" class="btn btn-primary btn-large">Abrir Maluap</a>
+    <!-- ═══════════════════════ CTA FINAL ═══════════════════════ -->
+    <section class="cta-final cta-v2">
+      <h2>Pruébala con alguien sordo en tu vida</h2>
+      <p>O contigo, si lo eres tú. Funciona en 30 segundos. Si no te sirve, también está bien — cuéntanos qué falta.</p>
+      <div class="cta-row" style="justify-content: center">
+        <a href="/app/" class="btn btn-primary btn-large">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          Abrir Maluap
+        </a>
+        <a href="#contacto" class="btn btn-ghost btn-large">Mandarnos feedback</a>
+      </div>
     </section>
 
+    <!-- ═══════════════════════ FEEDBACK ═══════════════════════ -->
     <section id="contacto" class="feedback-section">
-      <h2>Cuéntanos qué te falta</h2>
-      <p class="lead">Si eres persona sorda, si usas Maluap con alguien que lo es, o si simplemente tienes una idea: escríbenos. Lo leemos todo.</p>
+      <h2 class="section-title">Cuéntanos qué te falta</h2>
+      <p class="section-lead">Si eres persona sorda, si usas Maluap con alguien que lo es, o si simplemente tienes una idea: escríbenos. Lo leemos todo.</p>
       <form id="feedbackForm" class="feedback-form" novalidate>
         <div class="form-row">
           <label for="fbCategory">¿Sobre qué?</label>
@@ -281,13 +633,37 @@
     </script>
   </main>
 
-  <footer class="site-footer">
-    <p>Hecha con cariño para la comunidad sorda.</p>
-    <nav aria-label="Pie">
-      <a href="/privacidad.html">Privacidad</a>
-      <span aria-hidden="true">·</span>
-      <a href="mailto:hola@maluap.es">Contacto</a>
-    </nav>
+  <footer class="site-footer site-footer-v2">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          Maluap
+        </div>
+        <p class="footer-tagline">Comunicación accesible para personas sordas. Hecha con cariño, código abierto, gratis para siempre.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Producto</h4>
+        <a href="/app/">Abrir app</a>
+        <a href="#features">Qué hace</a>
+        <a href="#precio">Precio</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Comunidad</h4>
+        <a href="https://github.com/ilernetworklleida/pauma" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" target="_blank" rel="noopener">Manifiesto</a>
+        <a href="https://github.com/ilernetworklleida/pauma/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribuir</a>
+        <a href="#contacto">Feedback</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="/privacidad.html">Privacidad</a>
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">Licencia AGPL-3.0</a>
+        <a href="mailto:hola@maluap.es">hola@maluap.es</a>
+      </div>
+    </div>
+    <p class="footer-copy">© 2026 Maluap · Hecha en Catalunya · Abierta al mundo</p>
   </footer>
 </body>
 </html>
