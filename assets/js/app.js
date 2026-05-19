@@ -1271,17 +1271,80 @@
 
   function addFinal(text, speakerIdx) {
     if (!text) return;
-    // Dedup: ignorar finales repetidos consecutivos (bug conocido Web Speech Android)
+    // ════════════════════════════════════════════════════════════════
+    // DEDUP DURO contra growing finals + duplicados (Web Speech Android bug)
+    // ════════════════════════════════════════════════════════════════
     const now = Date.now();
+    const speaker = speakerIdx != null ? Number(speakerIdx) : null;
     const norm = text.replace(/[.,!?…]+$/g, '').trim().toLowerCase();
-    if (state._lastFinalNorm === norm && (now - (state._lastFinalAt || 0)) < 4000) return;
-    // Dedup: si el ultimo segmento del MISMO hablante termina exactamente con este texto, ignorar
-    if (state.lastSegmentEl && state.lastSpeaker === (speakerIdx != null ? Number(speakerIdx) : null)) {
-      const prevText = (state.lastSegmentEl.querySelector('.segment-text')?.textContent || '').toLowerCase();
-      if (prevText && (prevText.endsWith(norm) || norm.length > 6 && prevText.includes(norm))) return;
+    const dedupKey = (speaker == null ? 'null' : String(speaker)) + ':' + norm;
+
+    // CASO 1: duplicado exacto del mismo hablante en <4s -> descartar
+    if (state._lastDedupKey === dedupKey && (now - (state._lastFinalAt || 0)) < 4000) return;
+
+    if (state.lastSegmentEl && state.lastSpeaker === speaker) {
+      const span = state.lastSegmentEl.querySelector('.segment-text');
+      const prevRaw = (span?.textContent || '');
+      const prevNorm = prevRaw.replace(/[.,!?…]+$/g, '').trim().toLowerCase();
+
+      // CASO 2: nuevo texto YA esta dentro del anterior -> descartar (subduplicado)
+      if (prevNorm && norm.length >= 3 &&
+          prevNorm.length >= norm.length && prevNorm.includes(norm)) {
+        state._lastDedupKey = dedupKey;
+        state._lastFinalAt = now;
+        return;
+      }
+
+      // CASO 3: nuevo texto EMPIEZA con el anterior (growing final) -> REEMPLAZAR
+      // Web Speech a veces emite "Hola" -> "Hola que tal" -> "Hola que tal como estas"
+      // como 3 finales sucesivos. Esto los une en uno solo en lugar de concatenarlos.
+      if (prevNorm && prevNorm.length > 3 &&
+          norm.length > prevNorm.length &&
+          norm.startsWith(prevNorm) &&
+          (now - (state.lastSegmentEl._t || 0)) < 8000) {
+        if (span) span.textContent = text;
+        state.lastSegmentEl._t = now;
+        state._lastDedupKey = dedupKey;
+        state._lastFinalAt = now;
+        // Re-detectar nombre/emocion sobre el texto extendido
+        const nameMatch = detectName(text);
+        if (nameMatch) {
+          state.lastSegmentEl.classList.add('name-match');
+          vibrate([60, 50, 100, 50, 60]);
+        }
+        if (state.showEmotion) {
+          const emotion = detectEmotion(text);
+          if (emotion) {
+            let m = state.lastSegmentEl.querySelector('.segment-emotion');
+            if (!m) {
+              m = document.createElement('span');
+              m.className = 'segment-emotion';
+              state.lastSegmentEl.querySelector('.segment-meta').appendChild(m);
+            }
+            m.textContent = '(' + emotion + ')';
+          }
+        }
+        // Actualizar tambien la sesion
+        if (state.currentSession) {
+          const segs = state.currentSession.segments;
+          if (segs.length) segs[segs.length - 1].text = text;
+        }
+        scrollTranscript(el.transcript);
+        return;
+      }
+
+      // CASO 4: texto identico al final del segmento -> descartar
+      if (prevNorm.endsWith(norm) && norm.length > 4) {
+        state._lastDedupKey = dedupKey;
+        state._lastFinalAt = now;
+        return;
+      }
     }
-    state._lastFinalNorm = norm;
+
+    state._lastDedupKey = dedupKey;
     state._lastFinalAt = now;
+    // Por compatibilidad con codigo legacy
+    state._lastFinalNorm = norm;
 
     renderInterim('', null);
     const emotion = detectEmotion(text);
