@@ -32,7 +32,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.14';
+  const VERSION = 'v0.15';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -606,6 +606,37 @@
     } catch { return null; }
   }
 
+  // Obtiene el stream de audio: del microfono (por defecto) o de la pestana/pantalla
+  async function getCaptureStream() {
+    if (state.captureSource === 'screen') {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true, // requerido por la API aunque solo queramos audio
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+      // Verificar que de verdad tenemos audio (el usuario debe marcar "Share audio")
+      const aTracks = stream.getAudioTracks();
+      if (!aTracks.length) {
+        stream.getTracks().forEach(t => t.stop());
+        throw new Error('screen_no_audio');
+      }
+      // Apagamos el video, no nos interesa
+      stream.getVideoTracks().forEach(t => t.stop());
+      return stream;
+    }
+    return navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1, sampleRate: 16000,
+        echoCancellation: true, noiseSuppression: true, autoGainControl: true,
+      },
+    });
+  }
+
   function floatTo16BitPCM(f32) {
     const out = new Int16Array(f32.length);
     for (let i = 0; i < f32.length; i++) {
@@ -630,12 +661,7 @@
       ws.onerror = () => fail(new Error('ws_error'));
       ws.onopen = async () => {
         try {
-          state.micStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              channelCount: 1, sampleRate: 16000,
-              echoCancellation: true, noiseSuppression: true, autoGainControl: true,
-            },
-          });
+          state.micStream = await getCaptureStream();
           const Ctx = window.AudioContext || window.webkitAudioContext;
           const ctx = new Ctx({ sampleRate: 16000 });
           state.audioCtx = ctx;
@@ -787,14 +813,29 @@
         state.provider = 'deepgram';
         state.reconnectAttempts = 0;
         await startDeepgram(cfg);
-        setStatus('Escuchando · alta calidad · identifica hablantes', 'ok');
-        setQuality('high', 'Alta calidad · diarización activa');
+        const sourceLabel = state.captureSource === 'screen' ? 'audio de pantalla' : 'identifica hablantes';
+        setStatus('Escuchando · alta calidad · ' + sourceLabel, 'ok');
+        setQuality('high', 'Alta calidad · ' + sourceLabel);
         showQuickActions();
         showTranscribeNotice();
         return;
       } catch (err) {
         console.warn('Deepgram failed, fallback', err);
         cleanupAudio();
+        // Si el usuario eligió pantalla, no podemos hacer fallback a Web Speech (no comparte stream)
+        if (state.captureSource === 'screen') {
+          await stopInternal();
+          if (err?.message === 'screen_no_audio') {
+            setStatus('No marcaste "Compartir audio" · vuelve a intentarlo', 'error');
+            feedbackToast('Pulsa de nuevo y MARCA "Compartir audio del sistema"', 'warn');
+          } else if (err?.name === 'NotAllowedError') {
+            setStatus('Permiso de pantalla denegado', 'error');
+          } else {
+            setStatus('No se pudo capturar la pantalla', 'error');
+            feedbackToast('Captura de pantalla no disponible · intenta micro', 'err');
+          }
+          return;
+        }
       }
     }
     if (SR) {
@@ -1602,6 +1643,9 @@
     el.sheetTitle.textContent = session.title?.trim() || fmtDate(session.started);
     el.sheetBody.innerHTML = '';
 
+    // BLOQUE RESUMEN (LLM)
+    renderSummaryBlock(session);
+
     for (const seg of session.segments) {
       const div = document.createElement('div');
       div.className = 'segment';
@@ -1637,6 +1681,207 @@
     el.sheet.hidden = true;
     state.activeSessionDetailId = null;
     if (state.view === 'history') renderHistory(); // FIX: refrescar lista por si cambio el titulo
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SOS · AVISAR A MI CONTACTO DE EMERGENCIA con GPS
+  // ════════════════════════════════════════════════════════════════
+  async function triggerEmergencyAlert() {
+    const emergency = (state.pass?.emergency || '').trim();
+    const myName = (state.pass?.name || '').trim();
+    if (!emergency) {
+      askConfirm({
+        title: 'Falta tu contacto de emergencia',
+        message: 'Para usar el aviso rápido necesito un nombre y un teléfono en Ajustes → Mi tarjeta. ¿Configurarlo ahora?',
+        confirmLabel: 'Ir a Ajustes',
+        onConfirm: () => {
+          closeSos();
+          activateView('settings');
+          setTimeout(() => document.getElementById('passEmergency_input')?.focus(), 300);
+        },
+      });
+      return;
+    }
+
+    // Extraer telefono del campo "Nombre + telefono" (formatos comunes)
+    const phoneMatch = emergency.match(/\+?\d[\d\s().-]{6,}/);
+    const phone = phoneMatch ? phoneMatch[0].replace(/[\s().-]/g, '') : '';
+
+    feedbackToast('Obteniendo ubicación…', 'ok');
+
+    let coords = null;
+    try {
+      coords = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject(new Error('no_geo'));
+        navigator.geolocation.getCurrentPosition(
+          resolve, reject,
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+        );
+      });
+    } catch (err) {
+      console.warn('geo failed', err);
+    }
+
+    const namePart = myName || 'persona sorda';
+    let messageBody = `Soy ${namePart}. Necesito ayuda urgente. Soy sorda, no puedo hablar por teléfono.`;
+    if (coords) {
+      const lat = coords.coords.latitude.toFixed(6);
+      const lng = coords.coords.longitude.toFixed(6);
+      messageBody += ` Mi ubicación: https://maps.google.com/?q=${lat},${lng}`;
+    } else {
+      messageBody += ' (no pude obtener ubicación GPS)';
+    }
+
+    // Vibrar como SOS internacional (... --- ...)
+    vibrate([100, 80, 100, 80, 100, 200, 300, 80, 300, 80, 300, 200, 100, 80, 100, 80, 100]);
+
+    // 1) Web Share API si esta disponible -> el usuario elige el canal (WhatsApp, SMS, email)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Urgencia · Maluap',
+          text: messageBody,
+        });
+        feedbackToast('Mensaje preparado · envíalo', 'ok');
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') console.warn('share failed', err);
+      }
+    }
+
+    // 2) Fallback SMS si tenemos telefono
+    if (phone) {
+      const smsUrl = `sms:${phone}?body=${encodeURIComponent(messageBody)}`;
+      window.location.href = smsUrl;
+      feedbackToast('Abriendo SMS con el mensaje preparado', 'ok');
+      return;
+    }
+
+    // 3) Ultimo fallback: copiar al portapapeles
+    try {
+      await navigator.clipboard.writeText(messageBody);
+      feedbackToast('Mensaje copiado · pégalo donde necesites', 'ok');
+    } catch {
+      feedbackToast('No pude compartir · revisa permisos', 'err');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // RESUMEN DE SESION (LLM, BYO OpenAI key)
+  // ════════════════════════════════════════════════════════════════
+  function renderSummaryBlock(session) {
+    const wrap = document.createElement('div');
+    wrap.className = 'summary-block';
+    wrap.id = 'summaryBlock';
+    el.sheetBody.appendChild(wrap);
+
+    if (session.summary) {
+      wrap.innerHTML = `
+        <div class="summary-head">
+          <span class="summary-icon" aria-hidden="true">✨</span>
+          <strong>Resumen</strong>
+          <button class="btn-text-sm" id="btnSummaryRedo" type="button" style="margin-left: auto">Rehacer</button>
+        </div>
+        <div class="summary-body"></div>
+      `;
+      wrap.querySelector('.summary-body').textContent = session.summary;
+      const btnRedo = wrap.querySelector('#btnSummaryRedo');
+      if (btnRedo) btnRedo.addEventListener('click', () => triggerSummary(session, wrap, true));
+      return;
+    }
+
+    const hasKey = !!localStorage.getItem('maluap-openai-key');
+    const longEnough = (session.segments || []).length >= 5;
+
+    if (!longEnough) return; // demasiado corta para resumir
+
+    if (!hasKey) {
+      wrap.innerHTML = `
+        <div class="summary-head">
+          <span class="summary-icon" aria-hidden="true">✨</span>
+          <strong>Resumir esta conversación</strong>
+        </div>
+        <p class="summary-hint">Añade tu clave OpenAI en Ajustes → "Calidad alta · mis claves API" para generar resúmenes automáticos (3 puntos clave) con un coste &lt; 0.001 € por resumen.</p>
+      `;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div class="summary-head">
+        <span class="summary-icon" aria-hidden="true">✨</span>
+        <strong>Resumir esta conversación</strong>
+        <button class="btn btn-primary btn-sm" id="btnSummaryGo" type="button" style="margin-left: auto">Resumir</button>
+      </div>
+      <p class="summary-hint">Te genero los 3 puntos clave de los ${session.segments.length} segmentos. Coste aprox: 0.001 €.</p>
+    `;
+    wrap.querySelector('#btnSummaryGo').addEventListener('click', () => triggerSummary(session, wrap, false));
+  }
+
+  async function triggerSummary(session, wrap, force) {
+    const key = localStorage.getItem('maluap-openai-key');
+    if (!key) {
+      feedbackToast('Falta tu clave OpenAI · ponla en Ajustes', 'warn');
+      return;
+    }
+    wrap.innerHTML = `<div class="summary-head"><span class="summary-icon">✨</span><strong>Resumiendo…</strong> <span class="spinner" style="margin-left: auto"></span></div>`;
+    try {
+      const summary = await summarizeWithOpenAI(session.segments, key);
+      if (!summary) throw new Error('empty_summary');
+      session.summary = summary;
+      await dbPutSession(session);
+      // Re-render
+      wrap.innerHTML = `
+        <div class="summary-head">
+          <span class="summary-icon" aria-hidden="true">✨</span>
+          <strong>Resumen</strong>
+          <button class="btn-text-sm" id="btnSummaryRedo" type="button" style="margin-left: auto">Rehacer</button>
+        </div>
+        <div class="summary-body"></div>
+      `;
+      wrap.querySelector('.summary-body').textContent = summary;
+      wrap.querySelector('#btnSummaryRedo').addEventListener('click', () => triggerSummary(session, wrap, true));
+      feedbackToast('Resumen generado', 'ok');
+    } catch (err) {
+      console.warn('summary failed', err);
+      wrap.innerHTML = `
+        <div class="summary-head">
+          <span class="summary-icon" aria-hidden="true">⚠️</span>
+          <strong>No se pudo resumir</strong>
+          <button class="btn btn-primary btn-sm" id="btnSummaryRetry" type="button" style="margin-left: auto">Reintentar</button>
+        </div>
+        <p class="summary-hint">Comprueba tu clave OpenAI o tu conexión.</p>
+      `;
+      wrap.querySelector('#btnSummaryRetry').addEventListener('click', () => triggerSummary(session, wrap, force));
+    }
+  }
+
+  async function summarizeWithOpenAI(segments, apiKey) {
+    const transcript = segments
+      .map(s => {
+        const who = s.speaker != null ? speakerLabel(s.speaker) : (s.ambient ? '(ambiente)' : '…');
+        return `[${who}] ${s.text}`;
+      })
+      .join('\n')
+      .slice(0, 12000); // ~3000 tokens, mas que de sobra para gpt-4o-mini
+
+    const prompt = `Eres asistente para una persona sorda. Te paso la transcripción de una conversación. Resume en MÁXIMO 3 puntos breves: 1) tema principal, 2) decisiones o acuerdos si los hay, 3) próximos pasos o pendientes. Si no aplica algún punto, dilo. En español, claro y directo. No inventes nada que no aparezca en el texto.\n\nTRANSCRIPCIÓN:\n${transcript}`;
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 350,
+      }),
+    });
+    if (!res.ok) throw new Error('openai_' + res.status);
+    const data = await res.json();
+    return (data.choices?.[0]?.message?.content || '').trim();
   }
 
   async function saveSheetTitle() {
@@ -2032,6 +2277,9 @@
       openSos();
     });
 
+    const btnEmergency = document.getElementById('btnSosEmergency');
+    if (btnEmergency) btnEmergency.addEventListener('click', triggerEmergencyAlert);
+
     const passShareBtn = document.getElementById('passShare');
     if (passShareBtn) {
       passShareBtn.addEventListener('click', async () => {
@@ -2323,9 +2571,53 @@
     setupApiKeys();
     setupSoundWatch();
     setupAmbientToggle();
+    setupSourceBar();
     // Expose toast for auth.js / other modules
     window.MaluapToast = feedbackToast;
     setStatus('Listo · pulsa el micrófono para empezar');
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SELECTOR FUENTE DE AUDIO (mic / pantalla)
+  // ════════════════════════════════════════════════════════════════
+  function setupSourceBar() {
+    const btnMic = document.getElementById('srcMic');
+    const btnScreen = document.getElementById('srcScreen');
+    if (!btnMic || !btnScreen) return;
+
+    state.captureSource = localStorage.getItem('maluap-capture') || 'mic';
+    if (state.captureSource === 'screen') {
+      btnScreen.classList.add('active'); btnScreen.setAttribute('aria-checked', 'true');
+      btnMic.classList.remove('active'); btnMic.setAttribute('aria-checked', 'false');
+    }
+
+    // Si el navegador no soporta getDisplayMedia, ocultar opcion pantalla
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      btnScreen.style.display = 'none';
+      state.captureSource = 'mic';
+      localStorage.setItem('maluap-capture', 'mic');
+      return;
+    }
+
+    const setSource = (source) => {
+      if (state.listening) {
+        feedbackToast('Detén la transcripción antes de cambiar de fuente', 'warn');
+        return;
+      }
+      state.captureSource = source;
+      localStorage.setItem('maluap-capture', source);
+      [btnMic, btnScreen].forEach(b => {
+        const active = b.dataset.source === source;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-checked', active ? 'true' : 'false');
+      });
+      if (source === 'screen') {
+        feedbackToast('Modo pantalla · cuando inicies, marca "Compartir audio"', 'ok');
+      }
+    };
+
+    btnMic.addEventListener('click', () => setSource('mic'));
+    btnScreen.addEventListener('click', () => setSource('screen'));
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -2352,6 +2644,7 @@
     const dgKey = document.getElementById('setDgKey');
     const dgProject = document.getElementById('setDgProject');
     const elKey = document.getElementById('setElKey');
+    const openaiKey = document.getElementById('setOpenAIKey');
     const btnSave = document.getElementById('btnSaveKeys');
     const btnClear = document.getElementById('btnClearKeys');
     const status = document.getElementById('keysStatus');
@@ -2361,13 +2654,15 @@
     const renderStatus = () => {
       const dk = localStorage.getItem('maluap-dg-key');
       const ek = localStorage.getItem('maluap-el-key');
-      if (!dk && !ek) {
+      const ok = localStorage.getItem('maluap-openai-key');
+      if (!dk && !ek && !ok) {
         status.textContent = '○ Sin claves · modo básico activo';
         status.style.color = 'var(--text-dim)';
       } else {
         const parts = [];
         if (dk) parts.push('✓ Deepgram: ' + masked(dk));
         if (ek) parts.push('✓ ElevenLabs: ' + masked(ek));
+        if (ok) parts.push('✓ OpenAI: ' + masked(ok));
         status.innerHTML = parts.join('<br>');
         status.style.color = 'var(--success, #34d399)';
       }
@@ -2376,15 +2671,18 @@
     dgKey.value = localStorage.getItem('maluap-dg-key') || '';
     dgProject.value = localStorage.getItem('maluap-dg-project') || '';
     elKey.value = localStorage.getItem('maluap-el-key') || '';
+    if (openaiKey) openaiKey.value = localStorage.getItem('maluap-openai-key') || '';
     renderStatus();
 
     btnSave.addEventListener('click', () => {
       const dk = dgKey.value.trim();
       const dp = dgProject.value.trim();
       const ek = elKey.value.trim();
+      const ok = openaiKey ? openaiKey.value.trim() : '';
       if (dk) localStorage.setItem('maluap-dg-key', dk); else localStorage.removeItem('maluap-dg-key');
       if (dp) localStorage.setItem('maluap-dg-project', dp); else localStorage.removeItem('maluap-dg-project');
       if (ek) localStorage.setItem('maluap-el-key', ek); else localStorage.removeItem('maluap-el-key');
+      if (ok) localStorage.setItem('maluap-openai-key', ok); else localStorage.removeItem('maluap-openai-key');
       feedbackToast('Claves guardadas en este móvil', 'ok');
       renderStatus();
     });
@@ -2398,7 +2696,9 @@
           localStorage.removeItem('maluap-dg-key');
           localStorage.removeItem('maluap-dg-project');
           localStorage.removeItem('maluap-el-key');
+          localStorage.removeItem('maluap-openai-key');
           dgKey.value = ''; dgProject.value = ''; elKey.value = '';
+          if (openaiKey) openaiKey.value = '';
           renderStatus();
           feedbackToast('Claves borradas', 'ok');
         },

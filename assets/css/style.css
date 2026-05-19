@@ -1470,6 +1470,81 @@ kbd {
   .tab-mic.listening::after { display: none; }
 }
 
+/* Bloque resumen LLM en session detail */
+.summary-block {
+  background: linear-gradient(135deg, rgba(167,139,250,0.10), rgba(124,58,237,0.05));
+  border: 1px solid rgba(167,139,250,0.25);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 4px 0 14px;
+}
+.summary-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm, 14px);
+  color: var(--text, #f5f5f5);
+}
+.summary-icon { font-size: 18px; }
+.summary-body {
+  margin-top: 10px;
+  font-size: var(--fs-sm, 14px);
+  line-height: 1.55;
+  color: var(--text, #f5f5f5);
+  white-space: pre-wrap;
+}
+.summary-hint {
+  margin-top: 8px;
+  font-size: var(--fs-xs, 13px);
+  color: var(--text-dim, #b8b8b8);
+}
+.btn-sm {
+  padding: 6px 12px;
+  font-size: var(--fs-xs, 13px);
+  border-radius: 8px;
+}
+
+/* Selector fuente de audio (mic / pantalla) */
+.source-bar {
+  display: flex;
+  gap: 6px;
+  padding: 6px 14px 0;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.source-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim, #b8b8b8);
+  font-size: var(--fs-xs, 13px);
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.source-btn:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--text, #f5f5f5);
+}
+.source-btn.active {
+  background: rgba(167,139,250,0.15);
+  border-color: var(--accent, #a78bfa);
+  color: var(--accent, #a78bfa);
+}
+.source-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.25);
+}
+@media (max-width: 380px) {
+  .source-btn span { display: none; }
+}
+
 /* Subtitulos de ambiente: estilo "(aplausos)", "(sirena)" inline */
 .segment.segment-ambient {
   background: linear-gradient(90deg, rgba(167,139,250,.08), rgba(167,139,250,.02));
