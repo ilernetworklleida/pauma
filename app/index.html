@@ -22,7 +22,7 @@
   <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-12-13-pro-max.png">
   <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/assets/icons/splash/iphone-14-15.png">
 
-  <link rel="stylesheet" href="/assets/css/style.css?v=16">
+  <link rel="stylesheet" href="/assets/css/style.css?v=19">
 </head>
 <body class="app">
 
@@ -289,6 +289,21 @@
   <main class="view view-settings" id="viewSettings" data-view="settings" hidden>
     <div class="settings-wrap">
       <h2 class="view-title">Ajustes</h2>
+
+      <section class="setting-group setting-group-feature" id="handsFreeSection">
+        <div class="setting-group-head">
+          <span class="setting-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><path d="M2 2l20 20" opacity="0"/></svg>
+          </span>
+          <h3>Manos libres</h3>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setHandsFree">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-label">Empezar a transcribir sola al abrir Maluap</span>
+        </label>
+        <p class="setting-hint">Con esto activado, no tienes que pulsar el micrófono: Maluap empieza a escuchar y transcribir en cuanto abres la app. Si se corta por cualquier motivo, se reanuda sola. Pulsa el micrófono solo cuando quieras PARAR.</p>
+      </section>
 
       <section class="setting-group">
         <div class="setting-group-head">
@@ -563,7 +578,7 @@
           </span>
           <h3>Sobre Maluap</h3>
         </div>
-        <p class="muted" style="font-size:var(--fs-sm)">v0.15 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
+        <p class="muted" style="font-size:var(--fs-sm)">v0.16 · <a href="/" style="color:var(--accent)">Inicio</a> · <a href="/privacidad.html" style="color:var(--accent)">Privacidad</a> · <a href="https://github.com/ilernetworklleida/pauma/blob/main/MANIFIESTO.md" style="color:var(--accent)">Manifiesto</a></p>
         <p class="setting-hint" style="margin-top:var(--s-3)">Atajos de teclado: <kbd>Espacio</kbd> empezar/parar · <kbd>S</kbd> SOS · <kbd>/</kbd> buscar historial · <kbd>Esc</kbd> cerrar.</p>
       </section>
     </div>
@@ -749,7 +764,7 @@
     </div>
   </div>
 
-  <script src="/assets/js/app.js?v=17" defer></script>
-  <script src="/assets/js/auth.js?v=17" defer></script>
+  <script src="/assets/js/app.js?v=19" defer></script>
+  <script src="/assets/js/auth.js?v=19" defer></script>
 </body>
 </html>

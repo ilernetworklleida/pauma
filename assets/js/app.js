@@ -32,7 +32,7 @@
   // CONST + STATE
   // ════════════════════════════════════════════════════════════════
   const PALETTE_LEN = 8;
-  const VERSION = 'v0.15';
+  const VERSION = 'v0.16';
 
   const PHRASE_CATEGORIES = [
     { id: 'general',    label: 'General' },
@@ -767,7 +767,12 @@
     const r = new SR();
     r.continuous = true; r.interimResults = true; r.lang = state.lang; r.maxAlternatives = 1;
     state.webSpeech = r;
+    state.webSpeechRunning = false;
+    state.webSpeechLastActivity = Date.now();
+
+    r.onstart = () => { state.webSpeechRunning = true; };
     r.onresult = (e) => {
+      state.webSpeechLastActivity = Date.now();
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
@@ -779,17 +784,35 @@
       renderInterim(interim, null);
     };
     r.onerror = (e) => {
-      if (e.error === 'no-speech' || e.error === 'aborted') return;
+      // no-speech y aborted son normales en escucha continua: ignorar y dejar que onend reinicie
+      if (e.error === 'no-speech' || e.error === 'aborted' || e.error === 'network') return;
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         setStatus('Permiso de micrófono denegado', 'error'); stop(); return;
       }
-      setStatus('Error: ' + e.error, 'error');
+      // otros errores: no paramos, dejamos que el watchdog/onend revivan
+      console.warn('[webspeech error]', e.error);
     };
     r.onend = () => {
-      if (!state.listening) return;
-      try { r.start(); } catch (_) {}
+      state.webSpeechRunning = false;
+      if (!state.listening || state.provider !== 'webspeech') return;
+      // Reinicio robusto: pequeno delay para evitar InvalidStateError de Chrome
+      setTimeout(() => {
+        if (!state.listening || state.provider !== 'webspeech') return;
+        if (state.webSpeechRunning) return;
+        try {
+          r.start();
+        } catch (err) {
+          // Si el objeto quedo en mal estado, recrear desde cero
+          try { startWebSpeech(); } catch (_) {}
+        }
+      }, 300);
     };
-    r.start();
+    try {
+      r.start();
+    } catch (err) {
+      // Ya estaba arrancando: recrear tras un momento
+      setTimeout(() => { if (state.listening && state.provider === 'webspeech') { try { startWebSpeech(); } catch (_) {} } }, 400);
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -818,6 +841,7 @@
         setQuality('high', 'Alta calidad · ' + sourceLabel);
         showQuickActions();
         showTranscribeNotice();
+        startWatchdog();
         return;
       } catch (err) {
         console.warn('Deepgram failed, fallback', err);
@@ -842,10 +866,11 @@
       try {
         state.provider = 'webspeech';
         startWebSpeech();
-        setStatus('Escuchando · modo básico (sin identificar hablantes)', 'warn');
+        setStatus('Escuchando · manos libres · modo básico', 'warn');
         setQuality('basic', 'Modo básico · sin identificar hablantes');
         showQuickActions();
         showTranscribeNotice();
+        startWatchdog();
         if (!localStorage.getItem('maluap-fallback-warned')) {
           localStorage.setItem('maluap-fallback-warned', '1');
           setTimeout(() => feedbackToast('Modo básico · calidad estándar del navegador', 'warn'), 1500);
@@ -873,6 +898,7 @@
   // versión sin vibrate ni "En pausa" para usar en errores de start()
   async function stopInternal() {
     state.listening = false;
+    stopWatchdog();
     clearInterval(state.keepAliveTimer); state.keepAliveTimer = null;
     el.brandDot.classList.remove('listening');
     el.tabMic.classList.remove('listening');
@@ -897,6 +923,7 @@
 
   async function stop() {
     state.listening = false;
+    stopWatchdog();
     clearInterval(state.keepAliveTimer); state.keepAliveTimer = null;
     el.brandDot.classList.remove('listening');
     el.tabMic.classList.remove('listening');
@@ -1168,6 +1195,39 @@
   async function toggle() {
     if (state.listening) await stop();
     else await start();
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // WATCHDOG · revive la transcripcion si se cae (manos libres real)
+  // ════════════════════════════════════════════════════════════════
+  function startWatchdog() {
+    stopWatchdog();
+    state.watchdogTimer = setInterval(() => {
+      if (!state.listening) return;
+      // Web Speech: si deberia estar escuchando pero el motor murio, revivir
+      if (state.provider === 'webspeech') {
+        const inactive = Date.now() - (state.webSpeechLastActivity || 0);
+        if (!state.webSpeechRunning && inactive > 1500) {
+          try {
+            if (state.webSpeech) { try { state.webSpeech.start(); } catch (_) { startWebSpeech(); } }
+            else startWebSpeech();
+          } catch (_) {}
+        }
+      }
+      // Deepgram: si el WS se cerro sin que nadie lo reabriera, reiniciar
+      if (state.provider === 'deepgram') {
+        if (state.ws && (state.ws.readyState === 2 || state.ws.readyState === 3)) {
+          // closing/closed mientras seguimos en listening -> restart maneja la reconexion
+          if (!state._dgRestarting) {
+            state._dgRestarting = true;
+            restart().finally(() => { state._dgRestarting = false; });
+          }
+        }
+      }
+    }, 3000);
+  }
+  function stopWatchdog() {
+    if (state.watchdogTimer) { clearInterval(state.watchdogTimer); state.watchdogTimer = null; }
   }
 
   // ── Push-to-Talk handlers ──
@@ -2635,9 +2695,61 @@
     setupSoundWatch();
     setupAmbientToggle();
     setupSourceBar();
+    setupHandsFree();
     // Expose toast for auth.js / other modules
     window.MaluapToast = feedbackToast;
-    setStatus('Listo · pulsa el micrófono para empezar');
+    if (state.handsFree) {
+      setStatus('Manos libres · empezando…');
+      maybeAutoStart();
+    } else {
+      setStatus('Listo · pulsa el micrófono para empezar');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // MANOS LIBRES · auto-start al abrir + sin push-to-talk
+  // ════════════════════════════════════════════════════════════════
+  function setupHandsFree() {
+    const t = document.getElementById('setHandsFree');
+    if (!t) return;
+    state.handsFree = localStorage.getItem('maluap-handsfree') === '1';
+    t.checked = state.handsFree;
+    // En carga: manos libres tiene prioridad sobre push-to-talk
+    if (state.handsFree && state.pushToTalk) {
+      state.pushToTalk = false;
+      localStorage.setItem('maluap-ptt', '0');
+    }
+    t.addEventListener('change', () => {
+      state.handsFree = t.checked;
+      localStorage.setItem('maluap-handsfree', t.checked ? '1' : '0');
+      if (t.checked) {
+        // Manos libres y push-to-talk son incompatibles
+        if (state.pushToTalk) {
+          state.pushToTalk = false;
+          localStorage.setItem('maluap-ptt', '0');
+          if (el.setPTT) el.setPTT.checked = false;
+        }
+        feedbackToast('Manos libres activado · empezará sola al abrir', 'ok');
+        if (!state.listening) {
+          activateView('listen');
+          start();
+        }
+      } else {
+        feedbackToast('Manos libres desactivado', 'ok');
+      }
+    });
+  }
+
+  function maybeAutoStart() {
+    if (!state.handsFree) return;
+    if (state.listening) return;
+    if (state.view !== 'listen') return;
+    // Pequeno delay para que el permiso de microfono no choque con el render inicial
+    setTimeout(() => {
+      if (state.handsFree && !state.listening && state.view === 'listen') {
+        start();
+      }
+    }, 700);
   }
 
   // ════════════════════════════════════════════════════════════════

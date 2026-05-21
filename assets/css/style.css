@@ -1266,6 +1266,10 @@ body.fs-xl .segment { font-size: var(--fs-segment-xl); }
   border-radius: var(--r-md); padding: var(--s-4);
   margin-bottom: var(--s-3);
 }
+.setting-group-feature {
+  border-color: var(--accent-soft-2);
+  background: linear-gradient(180deg, rgba(167,139,250,0.07), var(--bg-elev) 40%);
+}
 .setting-group-head {
   display: flex; align-items: center; gap: var(--s-3);
   margin-bottom: var(--s-3);
