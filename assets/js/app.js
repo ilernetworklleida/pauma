@@ -842,6 +842,7 @@
         showQuickActions();
         showTranscribeNotice();
         startWatchdog();
+        updateEasyStatus();
         return;
       } catch (err) {
         console.warn('Deepgram failed, fallback', err);
@@ -871,6 +872,7 @@
         showQuickActions();
         showTranscribeNotice();
         startWatchdog();
+        updateEasyStatus();
         if (!localStorage.getItem('maluap-fallback-warned')) {
           localStorage.setItem('maluap-fallback-warned', '1');
           setTimeout(() => feedbackToast('Modo básico · calidad estándar del navegador', 'warn'), 1500);
@@ -919,6 +921,7 @@
     releaseWakeLock();
     renderInterim('', null);
     state.currentSession = null;
+    updateEasyStatus();
   }
 
   async function stop() {
@@ -964,6 +967,7 @@
     state.lastSegmentEl = null;
     vibrate(20);
     setStatus('En pausa');
+    updateEasyStatus();
   }
 
   async function restart() {
@@ -2696,6 +2700,7 @@
     setupAmbientToggle();
     setupSourceBar();
     setupHandsFree();
+    setupEasyMode();
     // Expose toast for auth.js / other modules
     window.MaluapToast = feedbackToast;
     if (state.handsFree) {
@@ -2703,6 +2708,64 @@
       maybeAutoStart();
     } else {
       setStatus('Listo · pulsa el micrófono para empezar');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // MODO FACIL · la forma mas simple de usar Maluap (para Paula)
+  // ════════════════════════════════════════════════════════════════
+  function setupEasyMode() {
+    const t = document.getElementById('setEasyMode');
+    if (!t) return;
+    state.easyMode = localStorage.getItem('maluap-easy') === '1';
+    t.checked = state.easyMode;
+    applyEasyMode(state.easyMode);
+
+    t.addEventListener('change', () => {
+      state.easyMode = t.checked;
+      localStorage.setItem('maluap-easy', t.checked ? '1' : '0');
+      applyEasyMode(t.checked);
+      if (t.checked) {
+        // Modo facil = manos libres + texto XL + sin push-to-talk
+        state.handsFree = true;
+        localStorage.setItem('maluap-handsfree', '1');
+        if (el.setHandsFree) el.setHandsFree.checked = true;
+        state.pushToTalk = false;
+        localStorage.setItem('maluap-ptt', '0');
+        if (el.setPTT) el.setPTT.checked = false;
+        state.fontSize = 'xl';
+        localStorage.setItem('maluap-fontsize', 'xl');
+        applyFontSize();
+        const xlRadio = document.querySelector('input[name="fontsize"][value="xl"]');
+        if (xlRadio) xlRadio.checked = true;
+        feedbackToast('Modo fácil activado', 'ok');
+        activateView('listen');
+        if (!state.listening) start();
+      } else {
+        feedbackToast('Modo fácil desactivado', 'ok');
+      }
+    });
+  }
+
+  function applyEasyMode(on) {
+    document.body.classList.toggle('easy', on);
+    updateEasyStatus();
+  }
+
+  function updateEasyStatus() {
+    const banner = document.getElementById('easyStatus');
+    const text = document.getElementById('easyStatusText');
+    if (!banner) return;
+    if (!state.easyMode) { banner.hidden = true; return; }
+    banner.hidden = false;
+    if (state.listening) {
+      banner.classList.add('on');
+      banner.classList.remove('off');
+      if (text) text.textContent = 'Escuchando · toca el botón rojo para parar';
+    } else {
+      banner.classList.remove('on');
+      banner.classList.add('off');
+      if (text) text.textContent = 'Parado · toca el micrófono para empezar';
     }
   }
 
